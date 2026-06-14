@@ -1,14 +1,17 @@
 import uuid
+from collections.abc import Callable
 
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import decode_token
 from app.identity.models import User
 from app.identity.repository import UserRepository
-from app.shared.exceptions import UnauthorizedError
+from app.rbac.models import Permission, Role, UserRole
+from app.shared.exceptions import ForbiddenError, UnauthorizedError
 
 bearer = HTTPBearer(auto_error=False)
 
@@ -34,3 +37,38 @@ async def get_current_user(
 
 async def get_current_org_id(current_user: User = Depends(get_current_user)) -> uuid.UUID:
     return current_user.organization_id
+
+
+def require_permission(resource: str, action: str) -> Callable[..., User]:
+    """Return a FastAPI dependency that ensures the current user holds a specific permission.
+
+    Permission is granted when the user is a superuser OR when they have a role that
+    carries a matching (resource, action) permission record within their organization.
+    """
+
+    async def _check(
+        current_user: User = Depends(get_current_user),  # noqa: B008
+        db: AsyncSession = Depends(get_db),  # noqa: B008
+    ) -> User:
+        if current_user.is_superuser:
+            return current_user
+
+        result = await db.execute(
+            select(Permission)
+            .join(Role, Role.id == Permission.id)
+            .join(UserRole, UserRole.role_id == Role.id)
+            .where(
+                UserRole.user_id == current_user.id,
+                UserRole.organization_id == current_user.organization_id,
+                Permission.resource == resource,
+                Permission.action == action,
+                Permission.organization_id == current_user.organization_id,
+            )
+        )
+        if result.scalar_one_or_none() is None:
+            raise ForbiddenError(
+                f"Permission denied: {action} on {resource}."
+            )
+        return current_user
+
+    return _check

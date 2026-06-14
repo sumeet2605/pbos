@@ -121,3 +121,55 @@ async def test_refresh_tokens(client: AsyncClient, seeded_auth: dict[str, object
     data = response.json()["data"]
     assert data["access_token"]
     assert data["refresh_token"]
+
+
+@pytest.mark.asyncio
+async def test_refresh_token_single_use(
+    client: AsyncClient, seeded_auth: dict[str, object]
+) -> None:
+    organization = seeded_auth["organization"]
+    login_response = await client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": "user@example.com",
+            "password": "secret",
+            "organization_slug": organization.slug,
+        },
+    )
+    refresh_token = login_response.json()["data"]["refresh_token"]
+
+    first = await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": refresh_token}
+    )
+    assert first.status_code == 200
+
+    second = await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": refresh_token}
+    )
+    assert second.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_logout_revokes_refresh_token(
+    client: AsyncClient, seeded_auth: dict[str, object]
+) -> None:
+    organization = seeded_auth["organization"]
+    login_response = await client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": "user@example.com",
+            "password": "secret",
+            "organization_slug": organization.slug,
+        },
+    )
+    refresh_token = login_response.json()["data"]["refresh_token"]
+
+    logout_response = await client.post(
+        "/api/v1/auth/logout", json={"refresh_token": refresh_token}
+    )
+    assert logout_response.status_code == 204
+
+    refresh_response = await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": refresh_token}
+    )
+    assert refresh_response.status_code == 401
