@@ -1,22 +1,34 @@
 from contextlib import asynccontextmanager
+from importlib import import_module
 
 import structlog
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.logging import configure_logging
 from app.core.middleware import CorrelationIdMiddleware
-from app.shared.exceptions import (
-    CBOSException,
-    ForbiddenError,
-    NotFoundError,
-    UnauthorizedError,
-)
+from app.shared.exceptions import CBOSException, ForbiddenError, NotFoundError, UnauthorizedError
 from app.shared.responses import APIResponse, ErrorDetail
 
 logger = structlog.get_logger()
+
+
+def _register_models() -> None:
+    for module_name in (
+        "app.organizations.models",
+        "app.identity.models",
+        "app.rbac.models",
+        "app.configuration.models",
+        "app.audit.models",
+        "app.events.models",
+    ):
+        import_module(module_name)
+
+
+_register_models()
 
 
 @asynccontextmanager
@@ -36,7 +48,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Middleware
 app.add_middleware(CorrelationIdMiddleware)
 app.add_middleware(
     CORSMiddleware,
@@ -45,9 +56,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(api_router)
 
 
-# Exception handlers
 @app.exception_handler(NotFoundError)
 async def not_found_handler(request: Request, exc: NotFoundError) -> JSONResponse:
     return JSONResponse(

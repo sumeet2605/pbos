@@ -1,6 +1,9 @@
 """Pytest configuration and shared fixtures."""
 import asyncio
+import os
 from collections.abc import AsyncGenerator
+
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///./test_cbos.db")
 
 import pytest
 import pytest_asyncio
@@ -10,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from app.core.database import Base, get_db
 from app.main import app
 
-TEST_DATABASE_URL = "******localhost:5432/cbos_test"
+TEST_DATABASE_URL = os.environ["DATABASE_URL"]
 
 
 @pytest.fixture(scope="session")

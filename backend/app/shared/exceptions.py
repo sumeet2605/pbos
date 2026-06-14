@@ -1,6 +1,3 @@
-from fastapi import HTTPException, status
-
-
 class CBOSException(Exception):
     def __init__(self, message: str, code: str = "INTERNAL_ERROR") -> None:
         self.message = message
