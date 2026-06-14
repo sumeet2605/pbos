@@ -53,7 +53,7 @@ erDiagram
     ORGANIZATION ||--o{ CAMPAIGN : owns
     ORGANIZATION ||--o{ WORKFLOW_DEFINITION : owns
     ORGANIZATION ||--o{ CONFIGURATION_PACKAGE : owns
-    ORGANIZATION ||--o{ BUSINESS_TEMPLATE : installs_or_authors
+    ORGANIZATION ||--o{ BUSINESS_TEMPLATE : owns_installed_copy
     ORGANIZATION ||--o{ BILLING_ACCOUNT : owns
     ORGANIZATION ||--o{ AI_SESSION : owns
     ORGANIZATION ||--o{ ANALYTICS_SNAPSHOT : owns
@@ -90,7 +90,6 @@ erDiagram
     PROJECT ||--o{ INVOICE : bills
     PROJECT ||--o{ CONVERSATION : contains
     PROJECT ||--o{ WORKFLOW_EXECUTION : orchestrates
-    PROJECT }o--|| PROJECT_TEMPLATE : instantiated_from
 
     SHOOT ||--o{ SHOOT_SETUP : requires
     GALLERY ||--o{ GALLERY_ASSET : contains
@@ -98,7 +97,6 @@ erDiagram
     DELIVERABLE ||--o{ DELIVERABLE_ASSET : packages
     ASSET ||--o{ DELIVERABLE_ASSET : included_in
 
-    INVOICE ||--o{ PAYMENT : settles
     INVOICE ||--o{ PAYMENT_ALLOCATION : allocated_by
     PAYMENT ||--o{ PAYMENT_ALLOCATION : allocates
 
@@ -153,7 +151,7 @@ erDiagram
 |---|---|---|
 | User | Human actor operating within an organization | Organization |
 | Role | Access control grouping | Organization |
-| Permission | Global permission vocabulary resolved within tenant roles | Platform vocabulary, referenced by Organization |
+| Permission | Permission record available within the tenant access model | Organization |
 | UserRole | Many-to-many bridge between users and roles | Organization |
 | Team | Operational grouping for routing and visibility | Organization |
 | UserTeam | Many-to-many bridge between users and teams | Organization |
@@ -281,9 +279,9 @@ erDiagram
 ### AI
 | Entity | Purpose | Owner |
 |---|---|---|
-| AI_SESSION | AI interaction context anchored to organization and user | Organization |
-| AI_RECOMMENDATION | AI suggestion, summary, prediction, or classification | AI_SESSION |
-| AI_ACTION_LOG | Audit trail of AI suggestions shown, accepted, or rejected | AI_SESSION |
+| AISession | AI interaction context anchored to organization and user | Organization |
+| AIRecommendation | AI suggestion, summary, prediction, or classification | AISession |
+| AIActionLog | Audit trail of AI suggestions shown, accepted, or rejected | AISession |
 
 ---
 
@@ -301,7 +299,7 @@ erDiagram
 | WorkflowExecution | Step, Event, Retry, Approval, DeadLetterEntry | WorkflowDefinition, WorkflowVersion, Project, target entity | Runtime history immutable except resolution metadata |
 | ConfigurationPackage | ProjectType, FieldDefinition, StatusDefinition, FormDefinition, PermissionSet | BusinessTemplate provenance, Organization | Versioned tenant configuration snapshot |
 | BusinessTemplate | BusinessTemplateVersion, TemplateModule, ProjectTemplate | ConfigurationPackage provenance | Template registry data is copied into tenant scope |
-| AI_SESSION | AI_RECOMMENDATION, AI_ACTION_LOG | User, DomainEvent, Project, Client | AI may recommend but not mutate sensitive data autonomously |
+| AISession | AIRecommendation, AIActionLog | User, DomainEvent, Project, Client | AI may recommend but not mutate sensitive data autonomously |
 
 ---
 
@@ -419,7 +417,7 @@ erDiagram
 | BillingAccount / Subscription | BillingAccountCreated, SubscriptionActivated, SubscriptionRenewed, SubscriptionCancelled |
 | BillingInvoice | BillingInvoiceGenerated, BillingInvoicePaid, BillingInvoicePastDue |
 | AnalyticsSnapshot | AnalyticsSnapshotCalculated, AnalyticsSnapshotCorrected |
-| AI_SESSION / AI_RECOMMENDATION | AISessionStarted, AIRecommendationGenerated, AIRecommendationAccepted, AIRecommendationRejected |
+| AISession / AIRecommendation | AISessionStarted, AIRecommendationGenerated, AIRecommendationAccepted, AIRecommendationRejected |
 
 ---
 
@@ -491,7 +489,7 @@ erDiagram
    - correlation_id
 3. WorkflowExecutionEvent is the audit trail for workflow runtime behavior.
 4. DomainEvent is the audit/event source for cross-domain analytics and automation.
-5. AI_ACTION_LOG records what the AI suggested, what context it used, and whether a human accepted or rejected it.
+5. AIActionLog records what the AI suggested, what context it used, and whether a human accepted or rejected it.
 6. Audit records are immutable and excluded from normal soft delete behavior.
 7. Finance and billing mutations require stronger audit retention and approval linkage.
 
