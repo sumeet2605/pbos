@@ -66,6 +66,19 @@ shell-frontend: ## Open a shell in the frontend container
 shell-db: ## Open psql in the database container
 	$(DOCKER_COMPOSE) exec postgres psql -U cbos cbos
 
+generate-openapi: ## Export OpenAPI spec from FastAPI app
+	cd backend && python ../scripts/export_openapi.py
+
+generate-frontend-client: ## Regenerate TypeScript client from openapi.json
+	cd frontend && npm run generate
+
+generate: generate-openapi generate-frontend-client ## Regenerate OpenAPI spec and frontend client
+
+check-openapi-drift: ## Fail if generated openapi.json differs from committed version (CI guard)
+	@python scripts/export_openapi.py --check-only 2>/dev/null || \
+	  (python scripts/export_openapi.py && git diff --exit-code openapi.json || \
+	   (echo "ERROR: OpenAPI spec is out of date. Run 'make generate' and commit." && exit 1))
+
 # ─── Linting & Formatting ──────────────────────────────────────────────────────
 
 lint: lint-backend lint-frontend ## Lint all code

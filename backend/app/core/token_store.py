@@ -30,3 +30,14 @@ class RefreshTokenStore:
     async def revoke(self, jti: str) -> None:
         """Remove the JTI so subsequent refresh attempts are rejected."""
         await self._redis.delete(self._key(jti))
+
+    async def consume(self, jti: str) -> bool:
+        """Atomically read and delete the JTI in a single operation.
+
+        Returns True if the JTI existed (and was consumed), False if it was
+        already absent (revoked, expired, or never issued).  Using a single
+        GETDEL command prevents the TOCTOU race where two concurrent refresh
+        requests both pass an ``exists`` check before either calls ``revoke``.
+        """
+        value = await self._redis.getdel(self._key(jti))
+        return value is not None

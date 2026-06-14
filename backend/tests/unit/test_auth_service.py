@@ -101,8 +101,7 @@ async def test_refresh_success(monkeypatch: pytest.MonkeyPatch) -> None:
     user_repo = AsyncMock()
     user_repo.get_by_id.return_value = user
     token_store = AsyncMock()
-    token_store.exists.return_value = True
-    token_store.revoke.return_value = None
+    token_store.consume.return_value = True
     token_store.save.return_value = None
 
     monkeypatch.setattr(
@@ -128,7 +127,7 @@ async def test_refresh_success(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert result == TokenResponse(access_token="new-access", refresh_token="new-refresh")
     user_repo.get_by_id.assert_awaited_once_with(user.id)
-    token_store.revoke.assert_awaited_once_with("old-jti")
+    token_store.consume.assert_awaited_once_with("old-jti")
     token_store.save.assert_awaited_once_with("new-jti", user.id)
 
 
@@ -136,7 +135,7 @@ async def test_refresh_success(monkeypatch: pytest.MonkeyPatch) -> None:
 async def test_refresh_revoked_token(monkeypatch: pytest.MonkeyPatch) -> None:
     redis = object()
     token_store = AsyncMock()
-    token_store.exists.return_value = False
+    token_store.consume.return_value = False
 
     monkeypatch.setattr(
         "app.identity.service.decode_token",

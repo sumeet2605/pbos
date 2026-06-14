@@ -65,7 +65,7 @@ class AuthService:
             raise UnauthorizedError("Token is missing required claims.")
 
         store = RefreshTokenStore(redis)
-        if not await store.exists(jti):
+        if not await store.consume(jti):
             raise UnauthorizedError("Refresh token has been revoked.")
 
         user_id = uuid.UUID(payload["sub"])
@@ -75,7 +75,6 @@ class AuthService:
         if not user or not user.is_active or user.organization_id != organization_id:
             raise UnauthorizedError("User not found or inactive.")
 
-        await store.revoke(jti)
         new_access_token = create_access_token(user.id, user.organization_id)
         new_refresh_token, new_jti = create_refresh_token(user.id, user.organization_id)
         await store.save(new_jti, user.id)
