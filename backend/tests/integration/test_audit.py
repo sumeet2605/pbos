@@ -34,7 +34,9 @@ async def seeded_auth(db_session: AsyncSession) -> dict[str, object]:
 
 
 @pytest.mark.asyncio
-async def test_list_audit_events_authenticated(client: AsyncClient, seeded_auth: dict[str, object]) -> None:
+async def test_list_audit_events_authenticated(
+    client: AsyncClient, seeded_auth: dict[str, object]
+) -> None:
     headers = {"Authorization": f"{_SCHEME} {seeded_auth['token']}"}
     await client.post(
         "/api/v1/clients",
@@ -51,7 +53,9 @@ async def test_list_audit_events_authenticated(client: AsyncClient, seeded_auth:
 
 
 @pytest.mark.asyncio
-async def test_filter_audit_events_by_entity_type(client: AsyncClient, seeded_auth: dict[str, object]) -> None:
+async def test_filter_audit_events_by_entity_type(
+    client: AsyncClient, seeded_auth: dict[str, object]
+) -> None:
     headers = {"Authorization": f"{_SCHEME} {seeded_auth['token']}"}
     client_response = await client.post(
         "/api/v1/clients",
@@ -70,7 +74,11 @@ async def test_filter_audit_events_by_entity_type(client: AsyncClient, seeded_au
         headers=headers,
     )
 
-    response = await client.get("/api/v1/audit-events", params={"entity_type": "project"}, headers=headers)
+    response = await client.get(
+        "/api/v1/audit-events",
+        params={"entity_type": "project"},
+        headers=headers,
+    )
 
     assert response.status_code == 200
     payload = response.json()

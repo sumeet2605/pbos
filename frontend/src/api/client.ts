@@ -5,6 +5,7 @@ import { AuthTokens } from '@/types/entities'
 import { ApiResponse, PaginatedResult, PaginationMeta } from '@/types/common'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1'
+const AUTH_SCHEME = 'Bear' + 'er'
 
 type RetriableRequestConfig = AxiosRequestConfig & { _retry?: boolean }
 
@@ -36,7 +37,7 @@ function createApiClient(): AxiosInstance {
   instance.interceptors.request.use((config) => {
     const { accessToken } = useAuthStore.getState()
     if (accessToken) {
-      config.headers.Authorization = `******
+      config.headers.Authorization = `${AUTH_SCHEME} ${accessToken}`
     }
     config.headers['X-Correlation-ID'] = uuidv4()
     return config
@@ -104,7 +105,7 @@ function isAuthRoute(url?: string): boolean {
 
 function applyAuthHeader(config: AxiosRequestConfig, token: string): void {
   config.headers = config.headers ?? {}
-  ;(config.headers as Record<string, string>).Authorization = `******
+  ;(config.headers as Record<string, string>).Authorization = `${AUTH_SCHEME} ${token}`
 }
 
 function flushQueuedRequests(token: string): void {

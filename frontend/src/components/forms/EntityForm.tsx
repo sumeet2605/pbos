@@ -1,8 +1,8 @@
 import { ReactNode } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button, Col, Form, Input, Row, Select } from 'antd'
-import { Controller, DefaultValues, FieldValues, Path, useForm } from 'react-hook-form'
-import { ZodType } from 'zod'
+import { Controller, DefaultValues, FieldValues, Path, Resolver, useForm } from 'react-hook-form'
+import { ZodTypeAny } from 'zod'
 
 type FieldType = 'text' | 'textarea' | 'password' | 'select'
 
@@ -22,25 +22,12 @@ interface EntityField<T extends FieldValues> {
 }
 
 interface EntityFormProps<T extends FieldValues> {
-  schema: ZodType<T>
+  schema: ZodTypeAny
   defaultValues: DefaultValues<T>
   fields: EntityField<T>[]
   submitText: string
   onSubmit: (values: T) => Promise<void> | void
   footer?: ReactNode
-}
-
-function renderField(type: FieldType, options?: SelectOption[], disabled?: boolean) {
-  switch (type) {
-    case 'password':
-      return <Input.Password disabled={disabled} />
-    case 'textarea':
-      return <Input.TextArea rows={4} disabled={disabled} />
-    case 'select':
-      return <Select options={options} disabled={disabled} />
-    default:
-      return <Input disabled={disabled} />
-  }
 }
 
 export function EntityForm<T extends FieldValues>({
@@ -56,12 +43,12 @@ export function EntityForm<T extends FieldValues>({
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<T>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema as never) as Resolver<T>,
     defaultValues,
   })
 
   return (
-    <Form layout="vertical" onFinish={handleSubmit(async (values) => onSubmit(values))}>
+    <Form layout="vertical" onFinish={handleSubmit(async (values) => onSubmit(values as T))}>
       <Row gutter={[16, 0]}>
         {fields.map((field) => {
           const fieldType = field.type ?? 'text'

@@ -18,9 +18,9 @@ async def list_audit_events(
     limit: int = 20,
     entity_type: str | None = None,
     action: str | None = None,
-    db: AsyncSession = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
-    organization_id: uuid.UUID = Depends(get_current_org_id),
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+    _current_user: User = Depends(get_current_user),  # noqa: B008
+    organization_id: uuid.UUID = Depends(get_current_org_id),  # noqa: B008
 ) -> APIResponse:
     events, total = await AuditEventService.list(
         db,

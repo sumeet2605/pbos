@@ -1,1 +1,0 @@
-{"root":["./src/main.tsx","./src/api/client.ts","./src/app/App.tsx","./src/components/layout/AppShell.tsx","./src/pages/DashboardPage.tsx","./src/pages/NotFoundPage.tsx","./src/routes/router.tsx","./src/types/common.ts"],"errors":true,"version":"5.9.3"}

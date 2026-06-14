@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Button, Empty, Flex, Result, Spin, Typography } from 'antd'
 
 interface LoadingStateProps {
@@ -51,7 +52,7 @@ export function ErrorState({
 
 interface EmptyStateProps {
   description: string
-  action?: React.ReactNode
+  action?: ReactNode
 }
 
 export function EmptyState({ description, action }: EmptyStateProps) {
