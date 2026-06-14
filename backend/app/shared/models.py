@@ -1,7 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import DateTime, Uuid, func
+from sqlalchemy import DateTime, ForeignKey, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -34,10 +34,16 @@ class UUIDPrimaryKeyMixin:
 
 
 class TenantScopedMixin:
-    """Mixin for models scoped to an organization (tenant)."""
+    """Mixin for models scoped to an organization (tenant).
+
+    ``organization_id`` carries a foreign key to ``organizations.id`` so that
+    the database enforces referential integrity: no tenant-scoped row can
+    reference a non-existent organization.
+    """
 
     organization_id: Mapped[uuid.UUID] = mapped_column(
         Uuid,
+        ForeignKey("organizations.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )

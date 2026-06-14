@@ -24,7 +24,7 @@ async def seeded_auth(db_session: AsyncSession) -> dict[str, object]:
         hashed_password=hash_password("secret"),
         full_name="Test User",
         is_active=True,
-        is_superuser=False,
+        is_superuser=True,
     )
     db_session.add(user)
     await db_session.flush()

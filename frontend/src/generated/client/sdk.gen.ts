@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateClientApiV1ClientsPostData, CreateClientApiV1ClientsPostErrors, CreateClientApiV1ClientsPostResponses, CreateProjectApiV1ProjectsPostData, CreateProjectApiV1ProjectsPostErrors, CreateProjectApiV1ProjectsPostResponses, DeleteClientApiV1ClientsIdDeleteData, DeleteClientApiV1ClientsIdDeleteErrors, DeleteClientApiV1ClientsIdDeleteResponses, DeleteProjectApiV1ProjectsIdDeleteData, DeleteProjectApiV1ProjectsIdDeleteErrors, DeleteProjectApiV1ProjectsIdDeleteResponses, GetClientApiV1ClientsIdGetData, GetClientApiV1ClientsIdGetErrors, GetClientApiV1ClientsIdGetResponses, GetProjectApiV1ProjectsIdGetData, GetProjectApiV1ProjectsIdGetErrors, GetProjectApiV1ProjectsIdGetResponses, HealthCheckHealthGetData, HealthCheckHealthGetResponses, ListAuditEventsApiV1AuditEventsGetData, ListAuditEventsApiV1AuditEventsGetErrors, ListAuditEventsApiV1AuditEventsGetResponses, ListClientsApiV1ClientsGetData, ListClientsApiV1ClientsGetErrors, ListClientsApiV1ClientsGetResponses, ListProjectsApiV1ProjectsGetData, ListProjectsApiV1ProjectsGetErrors, ListProjectsApiV1ProjectsGetResponses, LoginApiV1AuthLoginPostData, LoginApiV1AuthLoginPostErrors, LoginApiV1AuthLoginPostResponses, MeApiV1AuthMeGetData, MeApiV1AuthMeGetResponses, RefreshApiV1AuthRefreshPostData, RefreshApiV1AuthRefreshPostErrors, RefreshApiV1AuthRefreshPostResponses, UpdateClientApiV1ClientsIdPutData, UpdateClientApiV1ClientsIdPutErrors, UpdateClientApiV1ClientsIdPutResponses, UpdateProjectApiV1ProjectsIdPutData, UpdateProjectApiV1ProjectsIdPutErrors, UpdateProjectApiV1ProjectsIdPutResponses } from './types.gen';
+import type { CreateClientApiV1ClientsPostData, CreateClientApiV1ClientsPostErrors, CreateClientApiV1ClientsPostResponses, CreateProjectApiV1ProjectsPostData, CreateProjectApiV1ProjectsPostErrors, CreateProjectApiV1ProjectsPostResponses, DeleteClientApiV1ClientsIdDeleteData, DeleteClientApiV1ClientsIdDeleteErrors, DeleteClientApiV1ClientsIdDeleteResponses, DeleteProjectApiV1ProjectsIdDeleteData, DeleteProjectApiV1ProjectsIdDeleteErrors, DeleteProjectApiV1ProjectsIdDeleteResponses, GetClientApiV1ClientsIdGetData, GetClientApiV1ClientsIdGetErrors, GetClientApiV1ClientsIdGetResponses, GetProjectApiV1ProjectsIdGetData, GetProjectApiV1ProjectsIdGetErrors, GetProjectApiV1ProjectsIdGetResponses, HealthCheckHealthGetData, HealthCheckHealthGetResponses, ListAuditEventsApiV1AuditEventsGetData, ListAuditEventsApiV1AuditEventsGetErrors, ListAuditEventsApiV1AuditEventsGetResponses, ListClientsApiV1ClientsGetData, ListClientsApiV1ClientsGetErrors, ListClientsApiV1ClientsGetResponses, ListProjectsApiV1ProjectsGetData, ListProjectsApiV1ProjectsGetErrors, ListProjectsApiV1ProjectsGetResponses, LoginApiV1AuthLoginPostData, LoginApiV1AuthLoginPostErrors, LoginApiV1AuthLoginPostResponses, LogoutApiV1AuthLogoutPostData, LogoutApiV1AuthLogoutPostErrors, LogoutApiV1AuthLogoutPostResponses, MeApiV1AuthMeGetData, MeApiV1AuthMeGetResponses, RefreshApiV1AuthRefreshPostData, RefreshApiV1AuthRefreshPostErrors, RefreshApiV1AuthRefreshPostResponses, UpdateClientApiV1ClientsIdPutData, UpdateClientApiV1ClientsIdPutErrors, UpdateClientApiV1ClientsIdPutResponses, UpdateProjectApiV1ProjectsIdPutData, UpdateProjectApiV1ProjectsIdPutErrors, UpdateProjectApiV1ProjectsIdPutResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -35,6 +35,18 @@ export const loginApiV1AuthLoginPost = <ThrowOnError extends boolean = false>(op
  */
 export const refreshApiV1AuthRefreshPost = <ThrowOnError extends boolean = false>(options: Options<RefreshApiV1AuthRefreshPostData, ThrowOnError>): RequestResult<RefreshApiV1AuthRefreshPostResponses, RefreshApiV1AuthRefreshPostErrors, ThrowOnError> => (options.client ?? client).post<RefreshApiV1AuthRefreshPostResponses, RefreshApiV1AuthRefreshPostErrors, ThrowOnError>({
     url: '/api/v1/auth/refresh',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Logout
+ */
+export const logoutApiV1AuthLogoutPost = <ThrowOnError extends boolean = false>(options: Options<LogoutApiV1AuthLogoutPostData, ThrowOnError>): RequestResult<LogoutApiV1AuthLogoutPostResponses, LogoutApiV1AuthLogoutPostErrors, ThrowOnError> => (options.client ?? client).post<LogoutApiV1AuthLogoutPostResponses, LogoutApiV1AuthLogoutPostErrors, ThrowOnError>({
+    url: '/api/v1/auth/logout',
     ...options,
     headers: {
         'Content-Type': 'application/json',

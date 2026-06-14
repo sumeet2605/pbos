@@ -1,4 +1,4 @@
-class CBOSException(Exception):
+class CBOSException(Exception):  # noqa: N818
     def __init__(self, message: str, code: str = "INTERNAL_ERROR") -> None:
         self.message = message
         self.code = code

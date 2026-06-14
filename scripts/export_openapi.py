@@ -12,9 +12,27 @@ if str(BACKEND_DIR) not in sys.path:
 from app.main import app  # noqa: E402
 
 
+def _generate_schema() -> str:
+    return json.dumps(app.openapi(), indent=2) + "\n"
+
+
 def main() -> None:
     output_path = REPO_ROOT / "openapi.json"
-    output_path.write_text(json.dumps(app.openapi(), indent=2) + "\n", encoding="utf-8")
+
+    if "--check-only" in sys.argv:
+        current = output_path.read_text(encoding="utf-8") if output_path.exists() else ""
+        generated = _generate_schema()
+        if current != generated:
+            print(
+                "ERROR: openapi.json is out of date.  "
+                "Run 'make generate' and commit the updated file.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        print("openapi.json is up to date.")
+        return
+
+    output_path.write_text(_generate_schema(), encoding="utf-8")
     print(f"Wrote {output_path}")
 
 
