@@ -1,0 +1,97 @@
+from contextlib import asynccontextmanager
+
+import structlog
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+from app.core.config import settings
+from app.core.logging import configure_logging
+from app.core.middleware import CorrelationIdMiddleware
+from app.shared.exceptions import (
+    CBOSException,
+    ForbiddenError,
+    NotFoundError,
+    UnauthorizedError,
+)
+from app.shared.responses import APIResponse, ErrorDetail
+
+logger = structlog.get_logger()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):  # type: ignore[type-arg]
+    configure_logging()
+    logger.info("CBOS backend starting", version=settings.app_version)
+    yield
+    logger.info("CBOS backend shutting down")
+
+
+app = FastAPI(
+    title=settings.app_name,
+    version=settings.app_version,
+    openapi_url=f"{settings.api_v1_prefix}/openapi.json",
+    docs_url=f"{settings.api_v1_prefix}/docs",
+    redoc_url=f"{settings.api_v1_prefix}/redoc",
+    lifespan=lifespan,
+)
+
+# Middleware
+app.add_middleware(CorrelationIdMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# Exception handlers
+@app.exception_handler(NotFoundError)
+async def not_found_handler(request: Request, exc: NotFoundError) -> JSONResponse:
+    return JSONResponse(
+        status_code=404,
+        content=APIResponse(
+            success=False,
+            errors=[ErrorDetail(code=exc.code, message=exc.message)],
+        ).model_dump(mode="json"),
+    )
+
+
+@app.exception_handler(UnauthorizedError)
+async def unauthorized_handler(request: Request, exc: UnauthorizedError) -> JSONResponse:
+    return JSONResponse(
+        status_code=401,
+        content=APIResponse(
+            success=False,
+            errors=[ErrorDetail(code=exc.code, message=exc.message)],
+        ).model_dump(mode="json"),
+    )
+
+
+@app.exception_handler(ForbiddenError)
+async def forbidden_handler(request: Request, exc: ForbiddenError) -> JSONResponse:
+    return JSONResponse(
+        status_code=403,
+        content=APIResponse(
+            success=False,
+            errors=[ErrorDetail(code=exc.code, message=exc.message)],
+        ).model_dump(mode="json"),
+    )
+
+
+@app.exception_handler(CBOSException)
+async def cbos_exception_handler(request: Request, exc: CBOSException) -> JSONResponse:
+    return JSONResponse(
+        status_code=400,
+        content=APIResponse(
+            success=False,
+            errors=[ErrorDetail(code=exc.code, message=exc.message)],
+        ).model_dump(mode="json"),
+    )
+
+
+@app.get("/health")
+async def health_check() -> dict[str, str]:
+    return {"status": "ok", "version": settings.app_version}
