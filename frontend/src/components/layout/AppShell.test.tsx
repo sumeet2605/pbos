@@ -7,7 +7,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppShell } from '@/components/layout/AppShell'
 import { useAuthStore } from '@/store/authStore'
 
-const logout = vi.fn()
+const { logout } = vi.hoisted(() => ({
+  logout: vi.fn(),
+}))
 
 vi.mock('@/api/services', async () => {
   const actual = await vi.importActual<typeof import('@/api/services')>('@/api/services')
