@@ -49,7 +49,7 @@ async def test_create_project_authenticated(client: AsyncClient, seeded_auth: di
             "client_id": client_id,
             "name": "Project A",
             "code": "PROJECT-A",
-            "description": "Primary project",
+            "description": "Migration workstream",
         },
         headers=headers,
     )
@@ -69,13 +69,14 @@ async def test_list_projects(client: AsyncClient, seeded_auth: dict[str, object]
         headers=headers,
     )
     client_id = client_response.json()["data"]["id"]
+
     await client.post(
         "/api/v1/projects",
         json={
             "client_id": client_id,
             "name": "Project A",
             "code": "PROJECT-A",
-            "description": "Primary project",
+            "description": "Migration workstream",
         },
         headers=headers,
     )
@@ -97,19 +98,93 @@ async def test_get_project_by_id(client: AsyncClient, seeded_auth: dict[str, obj
         headers=headers,
     )
     client_id = client_response.json()["data"]["id"]
-    project_response = await client.post(
+
+    create_response = await client.post(
         "/api/v1/projects",
         json={
             "client_id": client_id,
             "name": "Project A",
             "code": "PROJECT-A",
-            "description": "Primary project",
+            "description": "Migration workstream",
         },
         headers=headers,
     )
-    project_id = project_response.json()["data"]["id"]
+    project_id = create_response.json()["data"]["id"]
 
     response = await client.get(f"/api/v1/projects/{project_id}", headers=headers)
 
     assert response.status_code == 200
     assert response.json()["data"]["id"] == project_id
+
+
+@pytest.mark.asyncio
+async def test_update_project(client: AsyncClient, seeded_auth: dict[str, object]) -> None:
+    headers = {"Authorization": f"{_SCHEME} {seeded_auth['token']}"}
+    client_response = await client.post(
+        "/api/v1/clients",
+        json={"name": "Client A", "code": "CLIENT-A", "description": "Primary client"},
+        headers=headers,
+    )
+    new_client_response = await client.post(
+        "/api/v1/clients",
+        json={"name": "Client B", "code": "CLIENT-B", "description": "Secondary client"},
+        headers=headers,
+    )
+    client_id = client_response.json()["data"]["id"]
+    new_client_id = new_client_response.json()["data"]["id"]
+
+    create_response = await client.post(
+        "/api/v1/projects",
+        json={
+            "client_id": client_id,
+            "name": "Project A",
+            "code": "PROJECT-A",
+            "description": "Migration workstream",
+        },
+        headers=headers,
+    )
+    project_id = create_response.json()["data"]["id"]
+
+    response = await client.put(
+        f"/api/v1/projects/{project_id}",
+        json={"client_id": new_client_id, "name": "Project B", "status": "inactive"},
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["client_id"] == new_client_id
+    assert data["name"] == "Project B"
+    assert data["status"] == "inactive"
+
+
+@pytest.mark.asyncio
+async def test_delete_project_hides_it_from_queries(client: AsyncClient, seeded_auth: dict[str, object]) -> None:
+    headers = {"Authorization": f"{_SCHEME} {seeded_auth['token']}"}
+    client_response = await client.post(
+        "/api/v1/clients",
+        json={"name": "Client A", "code": "CLIENT-A", "description": "Primary client"},
+        headers=headers,
+    )
+    client_id = client_response.json()["data"]["id"]
+
+    create_response = await client.post(
+        "/api/v1/projects",
+        json={
+            "client_id": client_id,
+            "name": "Project A",
+            "code": "PROJECT-A",
+            "description": "Migration workstream",
+        },
+        headers=headers,
+    )
+    project_id = create_response.json()["data"]["id"]
+
+    delete_response = await client.delete(f"/api/v1/projects/{project_id}", headers=headers)
+    list_response = await client.get("/api/v1/projects", headers=headers)
+    detail_response = await client.get(f"/api/v1/projects/{project_id}", headers=headers)
+
+    assert delete_response.status_code == 200
+    assert delete_response.json()["data"] == {"id": project_id, "deleted": True}
+    assert list_response.json()["meta"]["total"] == 0
+    assert detail_response.status_code == 404

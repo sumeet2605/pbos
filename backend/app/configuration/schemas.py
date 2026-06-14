@@ -1,20 +1,24 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
+
+StatusValue = Literal["active", "inactive"]
 
 
 class ClientCreate(BaseModel):
     name: str
     code: str
     description: str | None = None
-    status: str = "active"
+    status: StatusValue = "active"
 
 
 class ClientUpdate(BaseModel):
     name: str | None = None
+    code: str | None = None
     description: str | None = None
-    status: str | None = None
+    status: StatusValue | None = None
 
 
 class ClientResponse(BaseModel):
@@ -25,7 +29,7 @@ class ClientResponse(BaseModel):
     name: str
     code: str
     description: str | None
-    status: str
+    status: StatusValue
     created_at: datetime
     updated_at: datetime
 
@@ -35,13 +39,15 @@ class ProjectCreate(BaseModel):
     name: str
     code: str
     description: str | None = None
-    status: str = "active"
+    status: StatusValue = "active"
 
 
 class ProjectUpdate(BaseModel):
+    client_id: uuid.UUID | None = None
     name: str | None = None
+    code: str | None = None
     description: str | None = None
-    status: str | None = None
+    status: StatusValue | None = None
 
 
 class ProjectResponse(BaseModel):
@@ -53,6 +59,6 @@ class ProjectResponse(BaseModel):
     name: str
     code: str
     description: str | None
-    status: str
+    status: StatusValue
     created_at: datetime
     updated_at: datetime

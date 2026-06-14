@@ -34,7 +34,7 @@ async def seeded_auth(db_session: AsyncSession) -> dict[str, object]:
 
 
 @pytest.mark.asyncio
-async def test_list_audit_events_authenticated(
+async def test_list_audit_events_for_created_client(
     client: AsyncClient, seeded_auth: dict[str, object]
 ) -> None:
     headers = {"Authorization": f"{_SCHEME} {seeded_auth['token']}"}
@@ -53,7 +53,7 @@ async def test_list_audit_events_authenticated(
 
 
 @pytest.mark.asyncio
-async def test_filter_audit_events_by_entity_type(
+async def test_list_audit_events_with_entity_filter(
     client: AsyncClient, seeded_auth: dict[str, object]
 ) -> None:
     headers = {"Authorization": f"{_SCHEME} {seeded_auth['token']}"}
@@ -69,7 +69,7 @@ async def test_filter_audit_events_by_entity_type(
             "client_id": client_id,
             "name": "Project A",
             "code": "PROJECT-A",
-            "description": "Primary project",
+            "description": "Migration workstream",
         },
         headers=headers,
     )
@@ -87,7 +87,41 @@ async def test_filter_audit_events_by_entity_type(
 
 
 @pytest.mark.asyncio
-async def test_list_audit_events_unauthenticated(client: AsyncClient) -> None:
+async def test_delete_actions_are_audited(client: AsyncClient, seeded_auth: dict[str, object]) -> None:
+    headers = {"Authorization": f"{_SCHEME} {seeded_auth['token']}"}
+    client_response = await client.post(
+        "/api/v1/clients",
+        json={"name": "Client A", "code": "CLIENT-A", "description": "Primary client"},
+        headers=headers,
+    )
+    client_id = client_response.json()["data"]["id"]
+    project_response = await client.post(
+        "/api/v1/projects",
+        json={
+            "client_id": client_id,
+            "name": "Project A",
+            "code": "PROJECT-A",
+            "description": "Migration workstream",
+        },
+        headers=headers,
+    )
+    project_id = project_response.json()["data"]["id"]
+
+    await client.delete(f"/api/v1/projects/{project_id}", headers=headers)
+    response = await client.get(
+        "/api/v1/audit-events",
+        params={"action": "PROJECT_DELETE"},
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["meta"]["total"] == 1
+    assert payload["data"][0]["action"] == "PROJECT_DELETE"
+
+
+@pytest.mark.asyncio
+async def test_audit_requires_authentication(client: AsyncClient) -> None:
     response = await client.get("/api/v1/audit-events")
 
     assert response.status_code == 401
