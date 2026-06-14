@@ -1,5 +1,6 @@
 import uuid
 
+import redis.asyncio as aioredis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.audit.repository import AuditEventRepository
@@ -9,6 +10,7 @@ from app.core.security import (
     decode_token,
     verify_password,
 )
+from app.core.token_store import RefreshTokenStore
 from app.identity.repository import UserRepository
 from app.identity.schemas import TokenResponse
 from app.organizations.repository import OrganizationRepository
@@ -22,6 +24,7 @@ class AuthService:
         email: str,
         password: str,
         organization_slug: str,
+        redis: aioredis.Redis,
     ) -> TokenResponse:
         organization_repo = OrganizationRepository(db)
         organization = await organization_repo.get_by_slug(organization_slug)
@@ -34,7 +37,10 @@ class AuthService:
             raise UnauthorizedError("Invalid credentials.")
 
         access_token = create_access_token(user.id, organization.id)
-        refresh_token = create_refresh_token(user.id, organization.id)
+        refresh_token, jti = create_refresh_token(user.id, organization.id)
+        store = RefreshTokenStore(redis)
+        await store.save(jti, user.id)
+
         await AuditEventRepository(db).create_event(
             organization_id=organization.id,
             entity_type="user",
@@ -45,10 +51,22 @@ class AuthService:
         return TokenResponse(access_token=access_token, refresh_token=refresh_token)
 
     @staticmethod
-    async def refresh(db: AsyncSession, refresh_token: str) -> TokenResponse:
+    async def refresh(
+        db: AsyncSession,
+        refresh_token: str,
+        redis: aioredis.Redis,
+    ) -> TokenResponse:
         payload = decode_token(refresh_token)
         if payload.get("type") != "refresh":
             raise UnauthorizedError("Invalid token type.")
+
+        jti = payload.get("jti")
+        if not jti:
+            raise UnauthorizedError("Token is missing required claims.")
+
+        store = RefreshTokenStore(redis)
+        if not await store.exists(jti):
+            raise UnauthorizedError("Refresh token has been revoked.")
 
         user_id = uuid.UUID(payload["sub"])
         organization_id = uuid.UUID(payload["org"])
@@ -57,7 +75,22 @@ class AuthService:
         if not user or not user.is_active or user.organization_id != organization_id:
             raise UnauthorizedError("User not found or inactive.")
 
+        await store.revoke(jti)
+        new_access_token = create_access_token(user.id, user.organization_id)
+        new_refresh_token, new_jti = create_refresh_token(user.id, user.organization_id)
+        await store.save(new_jti, user.id)
+
         return TokenResponse(
-            access_token=create_access_token(user.id, user.organization_id),
-            refresh_token=create_refresh_token(user.id, user.organization_id),
+            access_token=new_access_token,
+            refresh_token=new_refresh_token,
         )
+
+    @staticmethod
+    async def logout(refresh_token: str, redis: aioredis.Redis) -> None:
+        try:
+            payload = decode_token(refresh_token)
+        except UnauthorizedError:
+            return
+        jti = payload.get("jti")
+        if jti:
+            await RefreshTokenStore(redis).revoke(jti)

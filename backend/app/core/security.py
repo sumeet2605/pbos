@@ -36,15 +36,18 @@ def create_access_token(
     return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
 
 
-def create_refresh_token(subject: uuid.UUID, organization_id: uuid.UUID) -> str:
+def create_refresh_token(subject: uuid.UUID, organization_id: uuid.UUID) -> tuple[str, str]:
+    """Return (encoded_token, jti) so callers can persist the JTI."""
+    jti = str(uuid.uuid4())
     expires_at = datetime.now(UTC) + timedelta(days=settings.refresh_token_expire_days)
     payload: dict[str, Any] = {
         "sub": str(subject),
         "org": str(organization_id),
         "type": "refresh",
+        "jti": jti,
         "exp": expires_at,
     }
-    return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
+    return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm), jti
 
 
 def decode_token(token: str) -> dict[str, Any]:
