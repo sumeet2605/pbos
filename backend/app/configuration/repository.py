@@ -80,7 +80,9 @@ class ProjectRepository(BaseRepository[Project]):
 
     async def count_active_by_client(self, organization_id: uuid.UUID, client_id: uuid.UUID) -> int:
         count_result = await self.session.execute(
-            select(func.count()).select_from(self.model).where(
+            select(func.count())
+            .select_from(self.model)
+            .where(
                 self.model.organization_id == organization_id,
                 self.model.client_id == client_id,
                 self.model.deleted_at.is_(None),

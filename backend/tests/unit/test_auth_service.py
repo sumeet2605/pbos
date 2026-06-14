@@ -30,8 +30,12 @@ async def test_login_success(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("app.identity.service.UserRepository", lambda session: user_repo)
     monkeypatch.setattr("app.identity.service.AuditEventRepository", lambda session: audit_repo)
     monkeypatch.setattr("app.identity.service.verify_password", lambda plain, hashed: True)
-    monkeypatch.setattr("app.identity.service.create_access_token", lambda subject, organization_id: "access")
-    monkeypatch.setattr("app.identity.service.create_refresh_token", lambda subject, organization_id: "refresh")
+    monkeypatch.setattr(
+        "app.identity.service.create_access_token", lambda subject, organization_id: "access"
+    )
+    monkeypatch.setattr(
+        "app.identity.service.create_refresh_token", lambda subject, organization_id: "refresh"
+    )
 
     result = await AuthService.login(db, "user@example.com", "secret", "acme")
 
@@ -93,8 +97,12 @@ async def test_refresh_success(monkeypatch: pytest.MonkeyPatch) -> None:
         lambda token: {"sub": str(user.id), "org": str(organization_id), "type": "refresh"},
     )
     monkeypatch.setattr("app.identity.service.UserRepository", lambda session: user_repo)
-    monkeypatch.setattr("app.identity.service.create_access_token", lambda subject, org_id: "new-access")
-    monkeypatch.setattr("app.identity.service.create_refresh_token", lambda subject, org_id: "new-refresh")
+    monkeypatch.setattr(
+        "app.identity.service.create_access_token", lambda subject, org_id: "new-access"
+    )
+    monkeypatch.setattr(
+        "app.identity.service.create_refresh_token", lambda subject, org_id: "new-refresh"
+    )
 
     result = await AuthService.refresh(db, "refresh-token")
 

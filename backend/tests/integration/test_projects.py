@@ -34,7 +34,9 @@ async def seeded_auth(db_session: AsyncSession) -> dict[str, object]:
 
 
 @pytest.mark.asyncio
-async def test_create_project_authenticated(client: AsyncClient, seeded_auth: dict[str, object]) -> None:
+async def test_create_project_authenticated(
+    client: AsyncClient, seeded_auth: dict[str, object]
+) -> None:
     headers = {"Authorization": f"{_SCHEME} {seeded_auth['token']}"}
     client_response = await client.post(
         "/api/v1/clients",
@@ -159,7 +161,9 @@ async def test_update_project(client: AsyncClient, seeded_auth: dict[str, object
 
 
 @pytest.mark.asyncio
-async def test_delete_project_hides_it_from_queries(client: AsyncClient, seeded_auth: dict[str, object]) -> None:
+async def test_delete_project_hides_it_from_queries(
+    client: AsyncClient, seeded_auth: dict[str, object]
+) -> None:
     headers = {"Authorization": f"{_SCHEME} {seeded_auth['token']}"}
     client_response = await client.post(
         "/api/v1/clients",

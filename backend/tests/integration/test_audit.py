@@ -87,7 +87,9 @@ async def test_list_audit_events_with_entity_filter(
 
 
 @pytest.mark.asyncio
-async def test_delete_actions_are_audited(client: AsyncClient, seeded_auth: dict[str, object]) -> None:
+async def test_delete_actions_are_audited(
+    client: AsyncClient, seeded_auth: dict[str, object]
+) -> None:
     headers = {"Authorization": f"{_SCHEME} {seeded_auth['token']}"}
     client_response = await client.post(
         "/api/v1/clients",

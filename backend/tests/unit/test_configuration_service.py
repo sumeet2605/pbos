@@ -33,7 +33,9 @@ async def test_create_client_success(monkeypatch: pytest.MonkeyPatch) -> None:
     audit_repo.create_event.return_value = None
 
     monkeypatch.setattr("app.configuration.service.ClientRepository", lambda session: repo)
-    monkeypatch.setattr("app.configuration.service.AuditEventRepository", lambda session: audit_repo)
+    monkeypatch.setattr(
+        "app.configuration.service.AuditEventRepository", lambda session: audit_repo
+    )
 
     result = await ClientService.create(
         db,
@@ -83,7 +85,9 @@ async def test_update_client_conflict(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("app.configuration.service.ClientRepository", lambda session: repo)
 
     with pytest.raises(ConflictError):
-        await ClientService.update(object(), org_id, uuid.uuid4(), client.id, ClientUpdate(code="NEW"))
+        await ClientService.update(
+            object(), org_id, uuid.uuid4(), client.id, ClientUpdate(code="NEW")
+        )
 
 
 @pytest.mark.asyncio
@@ -100,7 +104,9 @@ async def test_delete_client_returns_delete_response(monkeypatch: pytest.MonkeyP
 
     monkeypatch.setattr("app.configuration.service.ClientRepository", lambda session: repo)
     monkeypatch.setattr("app.configuration.service.ProjectRepository", lambda session: project_repo)
-    monkeypatch.setattr("app.configuration.service.AuditEventRepository", lambda session: audit_repo)
+    monkeypatch.setattr(
+        "app.configuration.service.AuditEventRepository", lambda session: audit_repo
+    )
 
     result = await ClientService.delete(object(), org_id, actor_id, client.id)
 
@@ -135,13 +141,17 @@ async def test_create_project_success(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr("app.configuration.service.ClientRepository", lambda session: client_repo)
     monkeypatch.setattr("app.configuration.service.ProjectRepository", lambda session: project_repo)
-    monkeypatch.setattr("app.configuration.service.AuditEventRepository", lambda session: audit_repo)
+    monkeypatch.setattr(
+        "app.configuration.service.AuditEventRepository", lambda session: audit_repo
+    )
 
     result = await ProjectService.create(
         db,
         org_id,
         actor_id,
-        ProjectCreate(client_id=client.id, name="Acme Project", code="PROJ", description="New project"),
+        ProjectCreate(
+            client_id=client.id, name="Acme Project", code="PROJ", description="New project"
+        ),
     )
 
     assert result.client_id == client.id
@@ -193,7 +203,9 @@ async def test_delete_project_returns_delete_response(monkeypatch: pytest.Monkey
     audit_repo.create_event.return_value = None
 
     monkeypatch.setattr("app.configuration.service.ProjectRepository", lambda session: repo)
-    monkeypatch.setattr("app.configuration.service.AuditEventRepository", lambda session: audit_repo)
+    monkeypatch.setattr(
+        "app.configuration.service.AuditEventRepository", lambda session: audit_repo
+    )
 
     result = await ProjectService.delete(object(), org_id, actor_id, project.id)
 

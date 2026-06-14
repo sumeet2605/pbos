@@ -40,6 +40,11 @@ export interface AuditEventFilters {
   action?: string
 }
 
+const requestOptions = {
+  responseStyle: 'data' as const,
+  throwOnError: true as const,
+}
+
 export function buildPaginationParams({ page = 1, pageSize = 10 }: PaginationParams): {
   skip: number
   limit: number
@@ -51,74 +56,80 @@ export function buildPaginationParams({ page = 1, pageSize = 10 }: PaginationPar
 }
 
 export async function login(payload: LoginRequest): Promise<TokenResponse> {
-  const response = await loginApiV1AuthLoginPost({ body: payload })
+  const response = await loginApiV1AuthLoginPost({ body: payload, ...requestOptions })
   return unwrapData<TokenResponse>(response)
 }
 
 export async function fetchCurrentUser(): Promise<UserResponse> {
-  const response = await meApiV1AuthMeGet()
+  const response = await meApiV1AuthMeGet(requestOptions)
   return unwrapData<UserResponse>(response)
 }
 
 export async function listClients(params: PaginationParams = {}): Promise<PaginatedApiResponseClientResponse> {
-  const response = await listClientsApiV1ClientsGet({
+  const result = await listClientsApiV1ClientsGet({
     query: buildPaginationParams(params),
+    ...requestOptions,
   })
-  return unwrapPaginated<PaginatedApiResponseClientResponse>({
+  const response = unwrapPaginated<PaginatedApiResponseClientResponse>(result)
+  const normalized: PaginatedApiResponseClientResponse = {
     ...response,
     data: response.data ?? [],
-  })
+  }
+  return normalized
 }
 
 export async function getClient(id: string): Promise<ClientResponse> {
-  const response = await getClientApiV1ClientsIdGet({ path: { id } })
+  const response = await getClientApiV1ClientsIdGet({ path: { id }, ...requestOptions })
   return unwrapData<ClientResponse>(response)
 }
 
 export async function createClient(payload: ClientCreate): Promise<ClientResponse> {
-  const response = await createClientApiV1ClientsPost({ body: payload })
+  const response = await createClientApiV1ClientsPost({ body: payload, ...requestOptions })
   return unwrapData<ClientResponse>(response)
 }
 
 export async function updateClient(id: string, payload: ClientUpdate): Promise<ClientResponse> {
-  const response = await updateClientApiV1ClientsIdPut({ body: payload, path: { id } })
+  const response = await updateClientApiV1ClientsIdPut({ body: payload, path: { id }, ...requestOptions })
   return unwrapData<ClientResponse>(response)
 }
 
 export async function deleteClient(id: string): Promise<DeleteResponse> {
-  const response = await deleteClientApiV1ClientsIdDelete({ path: { id } })
+  const response = await deleteClientApiV1ClientsIdDelete({ path: { id }, ...requestOptions })
   return unwrapData<DeleteResponse>(response)
 }
 
 export async function listProjects(
   params: PaginationParams = {}
 ): Promise<PaginatedApiResponseProjectResponse> {
-  const response = await listProjectsApiV1ProjectsGet({
+  const result = await listProjectsApiV1ProjectsGet({
     query: buildPaginationParams(params),
+    ...requestOptions,
   })
-  return unwrapPaginated<PaginatedApiResponseProjectResponse>({
+  const response = unwrapPaginated<PaginatedApiResponseProjectResponse>(result)
+  const normalized: PaginatedApiResponseProjectResponse = {
     ...response,
     data: response.data ?? [],
-  })
+  }
+  return normalized
 }
 
 export async function getProject(id: string): Promise<ProjectResponse> {
-  const response = await getProjectApiV1ProjectsIdGet({ path: { id } })
+  const response = await getProjectApiV1ProjectsIdGet({ path: { id }, ...requestOptions })
   return unwrapData<ProjectResponse>(response)
 }
 
 export async function createProject(payload: ProjectCreate): Promise<ProjectResponse> {
-  const response = await createProjectApiV1ProjectsPost({ body: payload })
+  const response = await createProjectApiV1ProjectsPost({ body: payload, ...requestOptions })
   return unwrapData<ProjectResponse>(response)
 }
 
 export async function updateProject(id: string, payload: ProjectUpdate): Promise<ProjectResponse> {
-  const response = await updateProjectApiV1ProjectsIdPut({ body: payload, path: { id } })
+  const response = await updateProjectApiV1ProjectsIdPut({ body: payload, path: { id }, ...requestOptions })
   return unwrapData<ProjectResponse>(response)
 }
 
 export async function deleteProject(id: string): Promise<DeleteResponse> {
-  const response = await deleteProjectApiV1ProjectsIdDelete({ path: { id } })
+  const response = await deleteProjectApiV1ProjectsIdDelete({ path: { id }, ...requestOptions })
   return unwrapData<DeleteResponse>(response)
 }
 
@@ -126,16 +137,19 @@ export async function listAuditEvents(
   params: PaginationParams & AuditEventFilters = {}
 ): Promise<PaginatedApiResponseAuditEventResponse> {
   const { entityType, action, ...pagination } = params
-  const response = await listAuditEventsApiV1AuditEventsGet({
+  const result = await listAuditEventsApiV1AuditEventsGet({
     query: {
       ...buildPaginationParams(pagination),
       action: action || undefined,
       entity_type: entityType || undefined,
     },
+    ...requestOptions,
   })
+  const response = unwrapPaginated<PaginatedApiResponseAuditEventResponse>(result)
 
-  return unwrapPaginated<PaginatedApiResponseAuditEventResponse>({
+  const normalized: PaginatedApiResponseAuditEventResponse = {
     ...response,
     data: response.data ?? [],
-  })
+  }
+  return normalized
 }

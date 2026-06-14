@@ -14,6 +14,9 @@ export function DashboardPage() {
   const clientsQuery = useClientsQuery(1, 5)
   const projectsQuery = useProjectsQuery(1, 5)
   const auditQuery = useAuditEventsQuery(1, 5)
+  const clients = clientsQuery.data?.data ?? []
+  const projects = projectsQuery.data?.data ?? []
+  const auditEvents = auditQuery.data?.data ?? []
 
   const blockingError = !clientsQuery.data && !projectsQuery.data && !auditQuery.data
   const hasAnyLoading = clientsQuery.isLoading || projectsQuery.isLoading || auditQuery.isLoading
@@ -81,9 +84,9 @@ export function DashboardPage() {
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={12}>
           <Card title="Recent Clients" extra={<Link to="/clients">View all</Link>}>
-            {clientsQuery.data?.data.length ? (
+            {clients.length ? (
               <List
-                dataSource={clientsQuery.data.data}
+                dataSource={clients}
                 renderItem={(client) => (
                   <List.Item>
                     <List.Item.Meta
@@ -101,9 +104,9 @@ export function DashboardPage() {
         </Col>
         <Col xs={24} xl={12}>
           <Card title="Recent Projects" extra={<Link to="/projects">View all</Link>}>
-            {projectsQuery.data?.data.length ? (
+            {projects.length ? (
               <List
-                dataSource={projectsQuery.data.data}
+                dataSource={projects}
                 renderItem={(project) => (
                   <List.Item>
                     <List.Item.Meta
@@ -122,9 +125,9 @@ export function DashboardPage() {
       </Row>
 
       <Card title="Latest Audit Activity" extra={<Link to="/audit">Open viewer</Link>}>
-        {auditQuery.data?.data.length ? (
+        {auditEvents.length ? (
           <List
-            dataSource={auditQuery.data.data}
+            dataSource={auditEvents}
             renderItem={(event) => (
               <List.Item>
                 <List.Item.Meta

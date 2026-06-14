@@ -11,13 +11,13 @@ def configure_logging() -> None:
             structlog.processors.TimeStamper(fmt="iso"),
             structlog.processors.StackInfoRenderer(),
             structlog.processors.format_exc_info,
-            structlog.dev.ConsoleRenderer()
-            if settings.debug
-            else structlog.processors.JSONRenderer(),
+            (
+                structlog.dev.ConsoleRenderer()
+                if settings.debug
+                else structlog.processors.JSONRenderer()
+            ),
         ],
-        wrapper_class=structlog.make_filtering_bound_logger(
-            "DEBUG" if settings.debug else "INFO"
-        ),
+        wrapper_class=structlog.make_filtering_bound_logger("DEBUG" if settings.debug else "INFO"),
         context_class=dict,
         logger_factory=structlog.PrintLoggerFactory(),
     )

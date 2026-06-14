@@ -20,6 +20,7 @@ export function ProjectCreatePage() {
   const navigate = useNavigate()
   const createProjectMutation = useCreateProjectMutation()
   const clientsQuery = useClientsQuery(1, 100)
+  const clients = clientsQuery.data?.data ?? []
   const { notification } = AntApp.useApp()
 
   if (clientsQuery.isLoading) {
@@ -35,7 +36,7 @@ export function ProjectCreatePage() {
     )
   }
 
-  if (!clientsQuery.data?.data.length) {
+  if (!clients.length) {
     return (
       <Card>
         <EmptyState
@@ -59,7 +60,7 @@ export function ProjectCreatePage() {
       <EntityForm<ProjectCreate>
         schema={projectSchema}
         defaultValues={{
-          client_id: clientsQuery.data.data[0]?.id ?? '',
+          client_id: clients[0]?.id ?? '',
           name: '',
           code: '',
           description: '',
@@ -71,7 +72,7 @@ export function ProjectCreatePage() {
             name: 'client_id',
             label: 'Client',
             type: 'select',
-            options: clientsQuery.data.data.map((client) => ({
+            options: clients.map((client) => ({
               label: `${client.name} (${client.code})`,
               value: client.id,
             })),

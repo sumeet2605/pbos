@@ -51,7 +51,9 @@ async def test_login_success(client: AsyncClient, seeded_auth: dict[str, object]
 
 
 @pytest.mark.asyncio
-async def test_login_invalid_credentials(client: AsyncClient, seeded_auth: dict[str, object]) -> None:
+async def test_login_invalid_credentials(
+    client: AsyncClient, seeded_auth: dict[str, object]
+) -> None:
     organization = seeded_auth["organization"]
     response = await client.post(
         "/api/v1/auth/login",

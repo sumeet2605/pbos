@@ -20,12 +20,16 @@ from app.shared.responses import APIResponse, DeleteResponse, PaginatedAPIRespon
 router = APIRouter()
 
 
-@router.post("/clients", response_model=APIResponse[ClientResponse], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/clients",
+    response_model=APIResponse[ClientResponse],
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_client(
     data: ClientCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-    organization_id: uuid.UUID = Depends(get_current_org_id),
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+    current_user: User = Depends(get_current_user),  # noqa: B008
+    organization_id: uuid.UUID = Depends(get_current_org_id),  # noqa: B008
 ) -> APIResponse[ClientResponse]:
     client = await ClientService.create(db, organization_id, current_user.id, data)
     return ok(client)
@@ -35,9 +39,9 @@ async def create_client(
 async def list_clients(
     skip: int = 0,
     limit: int = 20,
-    db: AsyncSession = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
-    organization_id: uuid.UUID = Depends(get_current_org_id),
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+    _current_user: User = Depends(get_current_user),  # noqa: B008
+    organization_id: uuid.UUID = Depends(get_current_org_id),  # noqa: B008
 ) -> PaginatedAPIResponse[ClientResponse]:
     clients, total = await ClientService.list(db, organization_id, skip, limit)
     return paginated(
@@ -51,9 +55,9 @@ async def list_clients(
 @router.get("/clients/{id}", response_model=APIResponse[ClientResponse])
 async def get_client(
     id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
-    organization_id: uuid.UUID = Depends(get_current_org_id),
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+    _current_user: User = Depends(get_current_user),  # noqa: B008
+    organization_id: uuid.UUID = Depends(get_current_org_id),  # noqa: B008
 ) -> APIResponse[ClientResponse]:
     client = await ClientService.get(db, organization_id, id)
     return ok(client)
@@ -63,9 +67,9 @@ async def get_client(
 async def update_client(
     id: uuid.UUID,
     data: ClientUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-    organization_id: uuid.UUID = Depends(get_current_org_id),
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+    current_user: User = Depends(get_current_user),  # noqa: B008
+    organization_id: uuid.UUID = Depends(get_current_org_id),  # noqa: B008
 ) -> APIResponse[ClientResponse]:
     client = await ClientService.update(db, organization_id, current_user.id, id, data)
     return ok(client)
@@ -74,20 +78,24 @@ async def update_client(
 @router.delete("/clients/{id}", response_model=APIResponse[DeleteResponse])
 async def delete_client(
     id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-    organization_id: uuid.UUID = Depends(get_current_org_id),
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+    current_user: User = Depends(get_current_user),  # noqa: B008
+    organization_id: uuid.UUID = Depends(get_current_org_id),  # noqa: B008
 ) -> APIResponse[DeleteResponse]:
     result = await ClientService.delete(db, organization_id, current_user.id, id)
     return ok(result)
 
 
-@router.post("/projects", response_model=APIResponse[ProjectResponse], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/projects",
+    response_model=APIResponse[ProjectResponse],
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_project(
     data: ProjectCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-    organization_id: uuid.UUID = Depends(get_current_org_id),
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+    current_user: User = Depends(get_current_user),  # noqa: B008
+    organization_id: uuid.UUID = Depends(get_current_org_id),  # noqa: B008
 ) -> APIResponse[ProjectResponse]:
     project = await ProjectService.create(db, organization_id, current_user.id, data)
     return ok(project)
@@ -97,9 +105,9 @@ async def create_project(
 async def list_projects(
     skip: int = 0,
     limit: int = 20,
-    db: AsyncSession = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
-    organization_id: uuid.UUID = Depends(get_current_org_id),
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+    _current_user: User = Depends(get_current_user),  # noqa: B008
+    organization_id: uuid.UUID = Depends(get_current_org_id),  # noqa: B008
 ) -> PaginatedAPIResponse[ProjectResponse]:
     projects, total = await ProjectService.list(db, organization_id, skip, limit)
     return paginated(
@@ -113,9 +121,9 @@ async def list_projects(
 @router.get("/projects/{id}", response_model=APIResponse[ProjectResponse])
 async def get_project(
     id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
-    organization_id: uuid.UUID = Depends(get_current_org_id),
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+    _current_user: User = Depends(get_current_user),  # noqa: B008
+    organization_id: uuid.UUID = Depends(get_current_org_id),  # noqa: B008
 ) -> APIResponse[ProjectResponse]:
     project = await ProjectService.get(db, organization_id, id)
     return ok(project)
@@ -125,9 +133,9 @@ async def get_project(
 async def update_project(
     id: uuid.UUID,
     data: ProjectUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-    organization_id: uuid.UUID = Depends(get_current_org_id),
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+    current_user: User = Depends(get_current_user),  # noqa: B008
+    organization_id: uuid.UUID = Depends(get_current_org_id),  # noqa: B008
 ) -> APIResponse[ProjectResponse]:
     project = await ProjectService.update(db, organization_id, current_user.id, id, data)
     return ok(project)
@@ -136,9 +144,9 @@ async def update_project(
 @router.delete("/projects/{id}", response_model=APIResponse[DeleteResponse])
 async def delete_project(
     id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-    organization_id: uuid.UUID = Depends(get_current_org_id),
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+    current_user: User = Depends(get_current_user),  # noqa: B008
+    organization_id: uuid.UUID = Depends(get_current_org_id),  # noqa: B008
 ) -> APIResponse[DeleteResponse]:
     result = await ProjectService.delete(db, organization_id, current_user.id, id)
     return ok(result)

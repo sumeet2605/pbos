@@ -1,3 +1,4 @@
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from importlib import import_module
 
@@ -32,7 +33,7 @@ _register_models()
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):  # type: ignore[type-arg]
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:  # type: ignore[type-arg]
     configure_logging()
     logger.info("CBOS backend starting", version=settings.app_version)
     yield
@@ -62,7 +63,9 @@ app.include_router(api_router)
 def _error_response(status_code: int, code: str, message: str) -> JSONResponse:
     return JSONResponse(
         status_code=status_code,
-        content=ErrorAPIResponse(errors=[ErrorDetail(code=code, message=message)]).model_dump(mode="json"),
+        content=ErrorAPIResponse(errors=[ErrorDetail(code=code, message=message)]).model_dump(
+            mode="json"
+        ),
     )
 
 

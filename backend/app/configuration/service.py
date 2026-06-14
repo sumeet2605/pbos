@@ -107,7 +107,9 @@ class ClientService:
 
         active_projects = await ProjectRepository(db).count_active_by_client(org_id, client.id)
         if active_projects > 0:
-            raise ConflictError("Client cannot be deleted while active projects still reference it.")
+            raise ConflictError(
+                "Client cannot be deleted while active projects still reference it."
+            )
 
         await repo.soft_delete(client)
         await AuditEventRepository(db).create_event(

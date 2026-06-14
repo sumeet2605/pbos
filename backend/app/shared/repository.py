@@ -1,27 +1,22 @@
 import uuid
-from typing import Any, Generic, TypeVar
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.shared.models import BaseModel
 
-ModelT = TypeVar("ModelT", bound=BaseModel)
 
-
-class BaseRepository(Generic[ModelT]):
+class BaseRepository[ModelT: BaseModel]:
     model: type[ModelT]
 
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
     async def get_by_id(self, id: uuid.UUID) -> ModelT | None:
-        result = await self.session.execute(
-            select(self.model).where(self.model.id == id)
-        )
+        result = await self.session.execute(select(self.model).where(self.model.id == id))
         return result.scalar_one_or_none()
 
-    async def create(self, **kwargs: Any) -> ModelT:
+    async def create(self, **kwargs: object) -> ModelT:
         instance = self.model(**kwargs)
         self.session.add(instance)
         await self.session.flush()

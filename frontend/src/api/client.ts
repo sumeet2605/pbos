@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
-import { client as generatedClient, refreshApiV1AuthRefreshPost } from '@/generated/client'
+import { refreshApiV1AuthRefreshPost } from '@/generated/client'
+import { client as generatedClient } from '@/generated/client/client.gen'
 import type { ErrorDetail, TokenResponse } from '@/generated/client'
 import { useAuthStore } from '@/store/authStore'
 
@@ -16,7 +17,7 @@ generatedClient.setConfig({
   auth: () => useAuthStore.getState().accessToken ?? undefined,
 })
 
-generatedClient.interceptors.request.use(async (request) => {
+generatedClient.interceptors.request.use(async (request: Request) => {
   const headers = new Headers(request.headers)
   headers.set('X-Correlation-ID', uuidv4())
   return new Request(request, { headers })
@@ -24,7 +25,7 @@ generatedClient.interceptors.request.use(async (request) => {
 
 let refreshPromise: Promise<string | null> | null = null
 
-generatedClient.interceptors.response.use(async (response, request) => {
+generatedClient.interceptors.response.use(async (response: Response, request: Request) => {
   if (
     response.status !== 401 ||
     isAuthRoute(request.url) ||
@@ -81,6 +82,8 @@ async function refreshAccessToken(refreshToken: string, organizationSlug: string
     refreshPromise = (async () => {
       const response = await refreshApiV1AuthRefreshPost({
         body: { refresh_token: refreshToken },
+        responseStyle: 'data',
+        throwOnError: true,
       })
       const tokens = unwrapData<TokenResponse>(response)
       useAuthStore.getState().setTokens(tokens, organizationSlug)
@@ -93,22 +96,25 @@ async function refreshAccessToken(refreshToken: string, organizationSlug: string
   return refreshPromise
 }
 
-export function unwrapData<T>(response: { success?: boolean; data?: T | null; errors?: Array<ErrorDetail> | null }): T {
-  if (!response.success || response.data == null) {
-    throw new Error(response.errors?.[0]?.message ?? 'Request failed')
+export function unwrapData<T>(result: {
+  data: { success?: boolean; data?: T | null; errors?: Array<ErrorDetail> | null }
+}): T {
+  if (!result.data.success || result.data.data == null) {
+    throw new Error(result.data.errors?.[0]?.message ?? 'Request failed')
   }
 
-  return response.data
+  return result.data.data
 }
 
-export function unwrapPaginated<T extends { meta: unknown; errors?: Array<ErrorDetail> | null; success?: boolean; data?: unknown }>(
-  response: T
+export function unwrapPaginated<
+  T extends { meta: unknown; errors?: Array<ErrorDetail> | null; success?: boolean; data?: unknown },
+>(result: { data: T }
 ): T {
-  if (!response.success) {
-    throw new Error(response.errors?.[0]?.message ?? 'Request failed')
+  if (!result.data.success) {
+    throw new Error(result.data.errors?.[0]?.message ?? 'Request failed')
   }
 
-  return response
+  return result.data
 }
 
 export function getApiErrorMessage(error: unknown): string {

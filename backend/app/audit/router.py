@@ -13,7 +13,7 @@ from app.shared.responses import PaginatedAPIResponse, paginated
 router = APIRouter()
 
 
-@router.get('/audit-events', response_model=PaginatedAPIResponse[AuditEventResponse])
+@router.get("/audit-events", response_model=PaginatedAPIResponse[AuditEventResponse])
 async def list_audit_events(
     skip: int = 0,
     limit: int = 20,

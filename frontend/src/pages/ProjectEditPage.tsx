@@ -23,6 +23,7 @@ export function ProjectEditPage() {
   const { notification } = AntApp.useApp()
   const projectQuery = useProjectQuery(projectId)
   const clientsQuery = useClientsQuery(1, 100)
+  const clients = clientsQuery.data?.data ?? []
   const updateProjectMutation = useUpdateProjectMutation(projectId)
 
   if (!id) {
@@ -74,7 +75,7 @@ export function ProjectEditPage() {
             name: 'client_id',
             label: 'Client',
             type: 'select',
-            options: clientsQuery.data.data.map((client) => ({
+            options: clients.map((client) => ({
               label: `${client.name} (${client.code})`,
               value: client.id,
             })),

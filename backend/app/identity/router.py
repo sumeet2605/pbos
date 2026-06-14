@@ -12,7 +12,10 @@ router = APIRouter()
 
 
 @router.post("/login", response_model=APIResponse[TokenResponse])
-async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)) -> APIResponse[TokenResponse]:
+async def login(
+    data: LoginRequest,
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+) -> APIResponse[TokenResponse]:
     tokens = await AuthService.login(db, data.email, data.password, data.organization_slug)
     return ok(tokens)
 
@@ -20,12 +23,14 @@ async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)) -> APIRe
 @router.post("/refresh", response_model=APIResponse[TokenResponse])
 async def refresh(
     data: RefreshRequest,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> APIResponse[TokenResponse]:
     tokens = await AuthService.refresh(db, data.refresh_token)
     return ok(tokens)
 
 
 @router.get("/me", response_model=APIResponse[UserResponse])
-async def me(current_user: User = Depends(get_current_user)) -> APIResponse[UserResponse]:
+async def me(
+    current_user: User = Depends(get_current_user),  # noqa: B008
+) -> APIResponse[UserResponse]:
     return ok(UserResponse.model_validate(current_user))

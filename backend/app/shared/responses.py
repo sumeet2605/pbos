@@ -1,10 +1,8 @@
 import uuid
 from datetime import UTC, datetime
-from typing import Any, Generic, TypeVar
+from typing import Any
 
 from pydantic import BaseModel, Field
-
-T = TypeVar("T")
 
 
 class ErrorDetail(BaseModel):
@@ -21,7 +19,7 @@ class PaginationMeta(BaseModel):
     has_more: bool = False
 
 
-class APIResponse(BaseModel, Generic[T]):
+class APIResponse[T](BaseModel):
     success: bool = True
     data: T | None = None
     meta: dict[str, Any] | None = None
@@ -30,7 +28,7 @@ class APIResponse(BaseModel, Generic[T]):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
-class PaginatedAPIResponse(BaseModel, Generic[T]):
+class PaginatedAPIResponse[T](BaseModel):
     success: bool = True
     data: list[T] = Field(default_factory=list)
     meta: PaginationMeta
@@ -53,11 +51,11 @@ class ErrorAPIResponse(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
-def ok(data: T, meta: dict[str, Any] | None = None) -> APIResponse[T]:
+def ok[T](data: T, meta: dict[str, Any] | None = None) -> APIResponse[T]:
     return APIResponse[T](success=True, data=data, meta=meta)
 
 
-def paginated(
+def paginated[T](
     data: list[T],
     total: int,
     page: int,
