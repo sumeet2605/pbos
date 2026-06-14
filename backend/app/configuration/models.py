@@ -3,14 +3,12 @@ import uuid
 from sqlalchemy import ForeignKey, String, UniqueConstraint, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.shared.models import BaseModel, TenantScopedMixin
+from app.shared.models import BaseModel, SoftDeleteMixin, TenantScopedMixin
 
 
-class Client(BaseModel, TenantScopedMixin):
+class Client(BaseModel, TenantScopedMixin, SoftDeleteMixin):
     __tablename__ = "clients"
-    __table_args__ = (
-        UniqueConstraint("organization_id", "code", name="uq_clients_org_code"),
-    )
+    __table_args__ = (UniqueConstraint("organization_id", "code", name="uq_clients_org_code"),)
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     code: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -18,7 +16,7 @@ class Client(BaseModel, TenantScopedMixin):
     status: Mapped[str] = mapped_column(String(50), default="active", nullable=False)
 
 
-class Project(BaseModel, TenantScopedMixin):
+class Project(BaseModel, TenantScopedMixin, SoftDeleteMixin):
     __tablename__ = "projects"
 
     client_id: Mapped[uuid.UUID] = mapped_column(
