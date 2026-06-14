@@ -68,7 +68,7 @@ generatedClient.interceptors.response.use(async (response: Response, request: Re
 })
 
 function isAuthRoute(url: string): boolean {
-  return url.includes('/auth/login') || url.includes('/auth/refresh')
+  return url.includes('/auth/login') || url.includes('/auth/refresh') || url.includes('/auth/logout')
 }
 
 function redirectToLogin(): void {

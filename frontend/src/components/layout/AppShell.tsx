@@ -21,6 +21,7 @@ import {
 } from 'antd'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
+import { logout } from '@/api/services'
 import { ErrorState, LoadingState } from '@/components/feedback/StateViews'
 import { useCurrentUserQuery } from '@/hooks/useCurrentUserQuery'
 import { getApiErrorMessage } from '@/api/client'
@@ -61,6 +62,7 @@ export function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const { token } = theme.useToken()
   const organizationSlug = useAuthStore((state) => state.organizationSlug)
+  const refreshToken = useAuthStore((state) => state.refreshToken)
   const storedUser = useAuthStore((state) => state.user)
   const clearSession = useAuthStore((state) => state.clearSession)
   const { data: currentUser, isLoading, error, refetch } = useCurrentUserQuery()
@@ -74,7 +76,14 @@ export function AppShell() {
     setDrawerOpen(false)
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (refreshToken) {
+      try {
+        await logout(refreshToken)
+      } catch {
+        // Always clear local session even if backend revocation request fails.
+      }
+    }
     clearSession()
     queryClient.clear()
     navigate('/login', { replace: true })
@@ -167,7 +176,7 @@ export function AppShell() {
                 </div>
               ) : null}
             </Space>
-            <Button icon={<LogoutOutlined />} onClick={handleLogout}>
+            <Button icon={<LogoutOutlined />} onClick={() => void handleLogout()}>
               Logout
             </Button>
           </Space>

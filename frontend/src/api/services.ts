@@ -9,6 +9,7 @@ import {
   listClientsApiV1ClientsGet,
   listProjectsApiV1ProjectsGet,
   loginApiV1AuthLoginPost,
+  logoutApiV1AuthLogoutPost,
   meApiV1AuthMeGet,
   updateClientApiV1ClientsIdPut,
   updateProjectApiV1ProjectsIdPut,
@@ -63,6 +64,13 @@ export async function login(payload: LoginRequest): Promise<TokenResponse> {
 export async function fetchCurrentUser(): Promise<UserResponse> {
   const response = await meApiV1AuthMeGet(requestOptions)
   return unwrapData<UserResponse>(response)
+}
+
+export async function logout(refreshToken: string): Promise<void> {
+  await logoutApiV1AuthLogoutPost({
+    body: { refresh_token: refreshToken },
+    ...requestOptions,
+  })
 }
 
 export async function listClients(params: PaginationParams = {}): Promise<PaginatedApiResponseClientResponse> {
