@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { ConfigProvider, App as AntApp } from 'antd'
+import { App as AntApp, ConfigProvider } from 'antd'
 import { RouterProvider } from 'react-router-dom'
 import { router } from '@/routes/router'
 
@@ -24,6 +24,7 @@ export default function App() {
         theme={{
           token: {
             colorPrimary: '#1677ff',
+            borderRadius: 10,
           },
         }}
       >

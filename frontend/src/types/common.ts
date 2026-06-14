@@ -1,3 +1,9 @@
+export interface ErrorDetail {
+  code: string
+  message: string
+  field?: string
+}
+
 export interface PaginationMeta {
   total: number
   page: number
@@ -6,13 +12,18 @@ export interface PaginationMeta {
   has_more: boolean
 }
 
-export interface PaginatedResponse<T> {
-  items: T[]
-  meta: PaginationMeta
+export interface ApiResponse<T> {
+  success: boolean
+  data: T | null
+  meta: PaginationMeta | Record<string, unknown> | null
+  errors: ErrorDetail[] | null
+  correlation_id: string | null
+  timestamp: string
 }
 
-export interface UUID {
-  readonly _brand: 'UUID'
+export interface PaginatedResult<T> {
+  data: T[]
+  meta: PaginationMeta
 }
 
 export type ID = string
