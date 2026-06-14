@@ -18,7 +18,7 @@ class RefreshTokenStore:
         return f"refresh:{jti}"
 
     async def save(self, jti: str, user_id: uuid.UUID) -> None:
-        """Persist a new refresh token JTI. Overwrites any previous entry for the same JTI."""
+        """Persist a new refresh token JTI with the associated user ID."""
         ttl = timedelta(days=_REFRESH_TTL_DAYS)
         await self._redis.set(self._key(jti), str(user_id), ex=int(ttl.total_seconds()))
 

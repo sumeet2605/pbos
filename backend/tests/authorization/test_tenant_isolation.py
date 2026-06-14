@@ -11,7 +11,7 @@ from app.core.security import create_access_token, hash_password
 from app.identity.models import User
 from app.organizations.models import Organization
 
-_SCHEME = "Bear" + "er"
+_SCHEME = "Bearer"  # noqa: S105
 
 
 async def _create_org_and_user(db: AsyncSession) -> tuple[Organization, User, str]:

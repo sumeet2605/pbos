@@ -55,7 +55,7 @@ def require_permission(resource: str, action: str) -> Callable[..., User]:
 
         result = await db.execute(
             select(Permission)
-            .join(Role, Role.id == Permission.id)
+            .join(Role, Role.id == Permission.role_id)
             .join(UserRole, UserRole.role_id == Role.id)
             .where(
                 UserRole.user_id == current_user.id,
