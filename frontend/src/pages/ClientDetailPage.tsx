@@ -1,30 +1,23 @@
-import { Button, Card, Descriptions, Space, Tag, Typography } from 'antd'
+import { Button, Card, Descriptions, Popconfirm, Space, Tag, Typography, App as AntApp } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
 import { getApiErrorMessage } from '@/api/client'
-import { getClient, listProjects } from '@/api/services'
-import { queryKeys } from '@/api/queryKeys'
 import { DataTable } from '@/components/data/DataTable'
 import { ErrorState, LoadingState } from '@/components/feedback/StateViews'
-import { Client, Project } from '@/types/entities'
+import type { ClientResponse, ProjectResponse } from '@/generated/client'
+import { useClientQuery, useDeleteClientMutation } from '@/hooks/useClientHooks'
+import { useProjectsQuery } from '@/hooks/useProjectHooks'
 import { formatDateTime, formatStatusLabel } from '@/utils/format'
 
 export function ClientDetailPage() {
   const navigate = useNavigate()
   const { id } = useParams()
+  const clientId = id ?? ''
+  const deleteClientMutation = useDeleteClientMutation()
+  const { notification } = AntApp.useApp()
 
-  const clientQuery = useQuery({
-    queryKey: queryKeys.clients.detail(id ?? ''),
-    queryFn: () => getClient(id ?? ''),
-    enabled: Boolean(id),
-  })
-
-  const relatedProjectsQuery = useQuery({
-    queryKey: queryKeys.projects.list(1, 100),
-    queryFn: () => listProjects({ page: 1, pageSize: 100 }),
-    enabled: Boolean(id),
-  })
+  const clientQuery = useClientQuery(clientId)
+  const relatedProjectsQuery = useProjectsQuery(1, 100)
 
   if (!id) {
     return <ErrorState description="Client identifier is missing." />
@@ -44,10 +37,10 @@ export function ClientDetailPage() {
   }
 
   const relatedProjects = (relatedProjectsQuery.data?.data ?? []).filter(
-    (project) => project.client_id === clientQuery.data?.id
+    (project) => project.client_id === clientQuery.data.id
   )
 
-  const columns: ColumnsType<Project> = [
+  const columns: ColumnsType<ProjectResponse> = [
     {
       title: 'Name',
       dataIndex: 'name',
@@ -60,7 +53,7 @@ export function ClientDetailPage() {
     {
       title: 'Status',
       dataIndex: 'status',
-      render: (status: string) => <Tag>{formatStatusLabel(status)}</Tag>,
+      render: (status: ProjectResponse['status']) => <Tag>{formatStatusLabel(status)}</Tag>,
     },
     {
       title: 'Created',
@@ -69,13 +62,38 @@ export function ClientDetailPage() {
     },
   ]
 
-  const client = clientQuery.data as Client
+  const client = clientQuery.data as ClientResponse
 
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <Card
         title={client.name}
-        extra={<Button onClick={() => navigate('/clients')}>Back to Clients</Button>}
+        extra={
+          <Space wrap>
+            <Button onClick={() => navigate(`/clients/${client.id}/edit`)}>Edit</Button>
+            <Popconfirm
+              title="Delete client"
+              description="This client can only be deleted when it has no active projects."
+              okText="Delete"
+              okButtonProps={{ danger: true, loading: deleteClientMutation.isPending }}
+              onConfirm={async () => {
+                try {
+                  await deleteClientMutation.mutateAsync(client.id)
+                  notification.success({ message: 'Client deleted successfully.' })
+                  navigate('/clients')
+                } catch (error) {
+                  notification.error({
+                    message: 'Unable to delete client',
+                    description: getApiErrorMessage(error),
+                  })
+                }
+              }}
+            >
+              <Button danger>Delete</Button>
+            </Popconfirm>
+            <Button onClick={() => navigate('/clients')}>Back to Clients</Button>
+          </Space>
+        }
       >
         <Descriptions column={{ xs: 1, md: 2 }} bordered>
           <Descriptions.Item label="Code">{client.code}</Descriptions.Item>
@@ -94,7 +112,7 @@ export function ClientDetailPage() {
         <Typography.Paragraph type="secondary">
           Related projects are sourced from the current organization project list.
         </Typography.Paragraph>
-        <DataTable<Project>
+        <DataTable<ProjectResponse>
           columns={columns}
           dataSource={relatedProjects}
           loading={relatedProjectsQuery.isLoading}

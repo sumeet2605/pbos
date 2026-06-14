@@ -1,27 +1,19 @@
-import { Button, Card, Descriptions, Space, Tag } from 'antd'
+import { Button, Card, Descriptions, Popconfirm, Space, Tag, App as AntApp } from 'antd'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
 import { getApiErrorMessage } from '@/api/client'
-import { getClient, getProject } from '@/api/services'
-import { queryKeys } from '@/api/queryKeys'
 import { ErrorState, LoadingState } from '@/components/feedback/StateViews'
+import { useClientQuery } from '@/hooks/useClientHooks'
+import { useDeleteProjectMutation, useProjectQuery } from '@/hooks/useProjectHooks'
 import { formatDateTime, formatStatusLabel } from '@/utils/format'
 
 export function ProjectDetailPage() {
   const navigate = useNavigate()
   const { id } = useParams()
-
-  const projectQuery = useQuery({
-    queryKey: queryKeys.projects.detail(id ?? ''),
-    queryFn: () => getProject(id ?? ''),
-    enabled: Boolean(id),
-  })
-
-  const clientQuery = useQuery({
-    queryKey: queryKeys.clients.detail(projectQuery.data?.client_id ?? ''),
-    queryFn: () => getClient(projectQuery.data?.client_id ?? ''),
-    enabled: Boolean(projectQuery.data?.client_id),
-  })
+  const projectId = id ?? ''
+  const deleteProjectMutation = useDeleteProjectMutation()
+  const { notification } = AntApp.useApp()
+  const projectQuery = useProjectQuery(projectId)
+  const clientQuery = useClientQuery(projectQuery.data?.client_id ?? '')
 
   if (!id) {
     return <ErrorState description="Project identifier is missing." />
@@ -46,7 +38,32 @@ export function ProjectDetailPage() {
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <Card
         title={project.name}
-        extra={<Button onClick={() => navigate('/projects')}>Back to Projects</Button>}
+        extra={
+          <Space wrap>
+            <Button onClick={() => navigate(`/projects/${project.id}/edit`)}>Edit</Button>
+            <Popconfirm
+              title="Delete project"
+              description="This action will soft-delete the project from organization views."
+              okText="Delete"
+              okButtonProps={{ danger: true, loading: deleteProjectMutation.isPending }}
+              onConfirm={async () => {
+                try {
+                  await deleteProjectMutation.mutateAsync(project.id)
+                  notification.success({ message: 'Project deleted successfully.' })
+                  navigate('/projects')
+                } catch (error) {
+                  notification.error({
+                    message: 'Unable to delete project',
+                    description: getApiErrorMessage(error),
+                  })
+                }
+              }}
+            >
+              <Button danger>Delete</Button>
+            </Popconfirm>
+            <Button onClick={() => navigate('/projects')}>Back to Projects</Button>
+          </Space>
+        }
       >
         <Descriptions column={{ xs: 1, md: 2 }} bordered>
           <Descriptions.Item label="Code">{project.code}</Descriptions.Item>

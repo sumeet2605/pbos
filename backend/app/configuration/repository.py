@@ -40,7 +40,9 @@ class ClientRepository(BaseRepository[Client]):
             .offset(skip)
             .limit(limit)
         )
-        count_result = await self.session.execute(select(func.count()).select_from(self.model).where(*filters))
+        count_result = await self.session.execute(
+            select(func.count()).select_from(self.model).where(*filters)
+        )
         return list(result.scalars().all()), count_result.scalar_one()
 
     async def soft_delete(self, client: Client) -> None:
@@ -71,7 +73,9 @@ class ProjectRepository(BaseRepository[Project]):
             .offset(skip)
             .limit(limit)
         )
-        count_result = await self.session.execute(select(func.count()).select_from(self.model).where(*filters))
+        count_result = await self.session.execute(
+            select(func.count()).select_from(self.model).where(*filters)
+        )
         return list(result.scalars().all()), count_result.scalar_one()
 
     async def count_active_by_client(self, organization_id: uuid.UUID, client_id: uuid.UUID) -> int:

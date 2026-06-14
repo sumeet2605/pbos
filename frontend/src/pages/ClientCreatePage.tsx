@@ -1,23 +1,21 @@
 import { Button, Card, Typography, App as AntApp } from 'antd'
 import { useNavigate } from 'react-router-dom'
-import { useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
-import { EntityForm } from '@/components/forms/EntityForm'
-import { createClient } from '@/api/services'
-import { queryKeys } from '@/api/queryKeys'
-import { ClientFormValues } from '@/types/entities'
 import { getApiErrorMessage } from '@/api/client'
+import { EntityForm } from '@/components/forms/EntityForm'
+import type { ClientCreate } from '@/generated/client'
+import { useCreateClientMutation } from '@/hooks/useClientHooks'
 
 const clientSchema = z.object({
   name: z.string().trim().min(1, 'Client name is required.'),
   code: z.string().trim().min(1, 'Client code is required.'),
   description: z.string().trim().optional(),
-  status: z.string().trim().min(1, 'Status is required.'),
+  status: z.enum(['active', 'inactive']),
 })
 
 export function ClientCreatePage() {
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
+  const createClientMutation = useCreateClientMutation()
   const { notification } = AntApp.useApp()
 
   return (
@@ -26,7 +24,7 @@ export function ClientCreatePage() {
       <Typography.Paragraph type="secondary">
         Register a new client inside the current organization.
       </Typography.Paragraph>
-      <EntityForm<ClientFormValues>
+      <EntityForm<ClientCreate>
         schema={clientSchema}
         defaultValues={{
           name: '',
@@ -53,13 +51,11 @@ export function ClientCreatePage() {
         footer={<Button onClick={() => navigate('/clients')}>Cancel</Button>}
         onSubmit={async (values) => {
           try {
-            const client = await createClient({
+            const client = await createClientMutation.mutateAsync({
               ...values,
               code: values.code.trim().toUpperCase(),
               description: values.description?.trim() || undefined,
             })
-            await queryClient.invalidateQueries({ queryKey: queryKeys.clients.all })
-            await queryClient.invalidateQueries({ queryKey: queryKeys.audit.all })
             notification.success({ message: 'Client created successfully.' })
             navigate(`/clients/${client.id}`)
           } catch (error) {

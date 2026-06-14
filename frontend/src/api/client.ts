@@ -1,121 +1,73 @@
-import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { v4 as uuidv4 } from 'uuid'
+import { client as generatedClient, refreshApiV1AuthRefreshPost } from '@/generated/client'
+import type { ErrorDetail, TokenResponse } from '@/generated/client'
 import { useAuthStore } from '@/store/authStore'
-import { AuthTokens } from '@/types/entities'
-import { ApiResponse, PaginatedResult, PaginationMeta } from '@/types/common'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1'
-const AUTH_SCHEME = 'Bear' + 'er'
+const RETRY_HEADER = 'x-cbos-retried'
 
-type RetriableRequestConfig = AxiosRequestConfig & { _retry?: boolean }
-
-type QueuedRequest = {
-  resolve: (token: string) => void
-  reject: (error: unknown) => void
-}
-
-const authClient = axios.create({
-  baseURL: API_BASE_URL,
+generatedClient.setConfig({
+  baseUrl: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  responseStyle: 'data',
+  throwOnError: true,
+  auth: () => useAuthStore.getState().accessToken ?? undefined,
 })
 
-const apiClient = createApiClient()
+generatedClient.interceptors.request.use(async (request) => {
+  const headers = new Headers(request.headers)
+  headers.set('X-Correlation-ID', uuidv4())
+  return new Request(request, { headers })
+})
 
-let isRefreshing = false
-let queuedRequests: QueuedRequest[] = []
+let refreshPromise: Promise<string | null> | null = null
 
-function createApiClient(): AxiosInstance {
-  const instance = axios.create({
-    baseURL: API_BASE_URL,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
+generatedClient.interceptors.response.use(async (response, request) => {
+  if (
+    response.status !== 401 ||
+    isAuthRoute(request.url) ||
+    request.headers.get(RETRY_HEADER) === '1'
+  ) {
+    return response
+  }
 
-  instance.interceptors.request.use((config) => {
-    const { accessToken } = useAuthStore.getState()
-    if (accessToken) {
-      config.headers.Authorization = `${AUTH_SCHEME} ${accessToken}`
+  const { refreshToken, organizationSlug, clearSession } = useAuthStore.getState()
+  if (!refreshToken) {
+    clearSession()
+    redirectToLogin()
+    return response
+  }
+
+  try {
+    const accessToken = await refreshAccessToken(refreshToken, organizationSlug)
+    if (!accessToken) {
+      clearSession()
+      redirectToLogin()
+      return response
     }
-    config.headers['X-Correlation-ID'] = uuidv4()
-    return config
-  })
 
-  instance.interceptors.response.use(
-    (response) => response,
-    async (error: AxiosError<ApiResponse<unknown>>) => {
-      const originalRequest = error.config as RetriableRequestConfig | undefined
-
-      if (
-        !originalRequest ||
-        error.response?.status !== 401 ||
-        originalRequest._retry ||
-        isAuthRoute(originalRequest.url)
-      ) {
-        return Promise.reject(error)
-      }
-
-      const { refreshToken, organizationSlug, setTokens, clearSession } = useAuthStore.getState()
-      if (!refreshToken) {
-        clearSession()
-        redirectToLogin()
-        return Promise.reject(error)
-      }
-
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          queuedRequests.push({
-            resolve: (token) => {
-              applyAuthHeader(originalRequest, token)
-              resolve(instance(originalRequest))
-            },
-            reject,
-          })
-        })
-      }
-
-      originalRequest._retry = true
-      isRefreshing = true
-
-      try {
-        const tokens = await refreshAccessToken(refreshToken)
-        setTokens(tokens, organizationSlug)
-        flushQueuedRequests(tokens.access_token)
-        applyAuthHeader(originalRequest, tokens.access_token)
-        return instance(originalRequest)
-      } catch (refreshError) {
-        rejectQueuedRequests(refreshError)
-        clearSession()
-        redirectToLogin()
-        return Promise.reject(refreshError)
-      } finally {
-        isRefreshing = false
-      }
+    const headers = new Headers(request.headers)
+    headers.set('Authorization', 'Bearer ' + accessToken)
+    headers.set(RETRY_HEADER, '1')
+    const retriedResponse = await fetch(new Request(request, { headers }))
+    if (retriedResponse.status === 401) {
+      clearSession()
+      redirectToLogin()
+      return retriedResponse
     }
-  )
 
-  return instance
-}
+    return retriedResponse
+  } catch {
+    clearSession()
+    redirectToLogin()
+    return response
+  }
+})
 
-function isAuthRoute(url?: string): boolean {
-  return url?.includes('/auth/login') === true || url?.includes('/auth/refresh') === true
-}
-
-function applyAuthHeader(config: AxiosRequestConfig, token: string): void {
-  config.headers = config.headers ?? {}
-  ;(config.headers as Record<string, string>).Authorization = `${AUTH_SCHEME} ${token}`
-}
-
-function flushQueuedRequests(token: string): void {
-  queuedRequests.forEach((request) => request.resolve(token))
-  queuedRequests = []
-}
-
-function rejectQueuedRequests(error: unknown): void {
-  queuedRequests.forEach((request) => request.reject(error))
-  queuedRequests = []
+function isAuthRoute(url: string): boolean {
+  return url.includes('/auth/login') || url.includes('/auth/refresh')
 }
 
 function redirectToLogin(): void {
@@ -124,30 +76,48 @@ function redirectToLogin(): void {
   }
 }
 
-function unwrapResponse<T>(response: AxiosResponse<ApiResponse<T>>): {
-  data: T
-  meta: ApiResponse<T>['meta']
-} {
-  if (!response.data.success || response.data.data === null) {
-    throw new Error(response.data.errors?.[0]?.message ?? 'Request failed')
+async function refreshAccessToken(refreshToken: string, organizationSlug: string): Promise<string | null> {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      const response = await refreshApiV1AuthRefreshPost({
+        body: { refresh_token: refreshToken },
+      })
+      const tokens = unwrapData<TokenResponse>(response)
+      useAuthStore.getState().setTokens(tokens, organizationSlug)
+      return tokens.access_token
+    })().finally(() => {
+      refreshPromise = null
+    })
   }
 
-  return {
-    data: response.data.data,
-    meta: response.data.meta,
-  }
+  return refreshPromise
 }
 
-async function refreshAccessToken(refreshToken: string): Promise<AuthTokens> {
-  const response = await authClient.post<ApiResponse<AuthTokens>>('/auth/refresh', {
-    refresh_token: refreshToken,
-  })
-  return unwrapResponse(response).data
+export function unwrapData<T>(response: { success?: boolean; data?: T | null; errors?: Array<ErrorDetail> | null }): T {
+  if (!response.success || response.data == null) {
+    throw new Error(response.errors?.[0]?.message ?? 'Request failed')
+  }
+
+  return response.data
+}
+
+export function unwrapPaginated<T extends { meta: unknown; errors?: Array<ErrorDetail> | null; success?: boolean; data?: unknown }>(
+  response: T
+): T {
+  if (!response.success) {
+    throw new Error(response.errors?.[0]?.message ?? 'Request failed')
+  }
+
+  return response
 }
 
 export function getApiErrorMessage(error: unknown): string {
-  if (axios.isAxiosError<ApiResponse<unknown>>(error)) {
-    return error.response?.data?.errors?.[0]?.message ?? error.message
+  if (isApiError(error)) {
+    return error.errors[0]?.message ?? 'Request failed.'
+  }
+
+  if (isValidationError(error)) {
+    return error.detail[0]?.msg ?? 'Validation failed.'
   }
 
   if (error instanceof Error) {
@@ -157,39 +127,22 @@ export function getApiErrorMessage(error: unknown): string {
   return 'Something went wrong.'
 }
 
-export async function apiGet<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-  const response = await apiClient.get<ApiResponse<T>>(url, config)
-  return unwrapResponse(response).data
+function isApiError(error: unknown): error is { errors: Array<ErrorDetail> } {
+  return Boolean(
+    error &&
+      typeof error === 'object' &&
+      'errors' in error &&
+      Array.isArray((error as { errors?: unknown }).errors)
+  )
 }
 
-export async function apiGetPaginated<T>(
-  url: string,
-  config?: AxiosRequestConfig
-): Promise<PaginatedResult<T>> {
-  const response = await apiClient.get<ApiResponse<T[]>>(url, config)
-  const payload = unwrapResponse(response)
-  return {
-    data: payload.data,
-    meta: payload.meta as PaginationMeta,
-  }
+function isValidationError(error: unknown): error is { detail: Array<{ msg?: string }> } {
+  return Boolean(
+    error &&
+      typeof error === 'object' &&
+      'detail' in error &&
+      Array.isArray((error as { detail?: unknown }).detail)
+  )
 }
 
-export async function apiPost<T, B = unknown>(
-  url: string,
-  body: B,
-  config?: AxiosRequestConfig
-): Promise<T> {
-  const response = await apiClient.post<ApiResponse<T>>(url, body, config)
-  return unwrapResponse(response).data
-}
-
-export async function publicPost<T, B = unknown>(
-  url: string,
-  body: B,
-  config?: AxiosRequestConfig
-): Promise<T> {
-  const response = await authClient.post<ApiResponse<T>>(url, body, config)
-  return unwrapResponse(response).data
-}
-
-export { apiClient }
+export { generatedClient }

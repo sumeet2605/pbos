@@ -2,12 +2,10 @@ import { useState } from 'react'
 import { Button, Card, Space, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { Link, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { listClients } from '@/api/services'
-import { queryKeys } from '@/api/queryKeys'
-import { DataTable } from '@/components/data/DataTable'
-import { Client } from '@/types/entities'
 import { getApiErrorMessage } from '@/api/client'
+import { DataTable } from '@/components/data/DataTable'
+import type { ClientResponse } from '@/generated/client'
+import { useClientsQuery } from '@/hooks/useClientHooks'
 import { formatDateTime, formatStatusLabel } from '@/utils/format'
 
 const PAGE_SIZE = 10
@@ -15,13 +13,9 @@ const PAGE_SIZE = 10
 export function ClientsListPage() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
+  const clientsQuery = useClientsQuery(page, PAGE_SIZE)
 
-  const clientsQuery = useQuery({
-    queryKey: queryKeys.clients.list(page, PAGE_SIZE),
-    queryFn: () => listClients({ page, pageSize: PAGE_SIZE }),
-  })
-
-  const columns: ColumnsType<Client> = [
+  const columns: ColumnsType<ClientResponse> = [
     {
       title: 'Name',
       dataIndex: 'name',
@@ -34,7 +28,7 @@ export function ClientsListPage() {
     {
       title: 'Status',
       dataIndex: 'status',
-      render: (status: string) => <Tag>{formatStatusLabel(status)}</Tag>,
+      render: (status: ClientResponse['status']) => <Tag>{formatStatusLabel(status)}</Tag>,
     },
     {
       title: 'Created',
@@ -44,7 +38,7 @@ export function ClientsListPage() {
     {
       title: 'Action',
       key: 'action',
-      render: (_, client) => <Link to={`/clients/${client.id}`}>View details</Link>,
+      render: (_, client) => <Link to={`/clients/${client.id}/edit`}>Edit</Link>,
     },
   ]
 
@@ -62,7 +56,7 @@ export function ClientsListPage() {
             Create Client
           </Button>
         </div>
-        <DataTable<Client>
+        <DataTable<ClientResponse>
           columns={columns}
           dataSource={clientsQuery.data?.data ?? []}
           loading={clientsQuery.isLoading}

@@ -11,6 +11,8 @@ describe('navigation helpers', () => {
   it('returns page titles for key routes', () => {
     expect(getPageTitle('/dashboard')).toBe('Dashboard')
     expect(getPageTitle('/clients/new')).toBe('Create Client')
+    expect(getPageTitle('/clients/123/edit')).toBe('Edit Client')
     expect(getPageTitle('/projects/123')).toBe('Project Detail')
+    expect(getPageTitle('/projects/123/edit')).toBe('Edit Project')
   })
 })

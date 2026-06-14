@@ -1,28 +1,19 @@
 import { useMemo } from 'react'
 import { Card, Col, List, Row, Space, Statistic, Tag, Typography } from 'antd'
 import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { listAuditEvents, listClients, listProjects } from '@/api/services'
-import { queryKeys } from '@/api/queryKeys'
-import { ErrorState, EmptyState, LoadingState } from '@/components/feedback/StateViews'
 import { getApiErrorMessage } from '@/api/client'
-import { formatDateTime, formatStatusLabel } from '@/utils/format'
+import { ErrorState, EmptyState, LoadingState } from '@/components/feedback/StateViews'
+import { useAuditEventsQuery } from '@/hooks/useAuditHooks'
+import { useClientsQuery } from '@/hooks/useClientHooks'
+import { useProjectsQuery } from '@/hooks/useProjectHooks'
 import { useAuthStore } from '@/store/authStore'
+import { formatDateTime, formatStatusLabel } from '@/utils/format'
 
 export function DashboardPage() {
   const currentUser = useAuthStore((state) => state.user)
-  const clientsQuery = useQuery({
-    queryKey: queryKeys.clients.list(1, 5),
-    queryFn: () => listClients({ page: 1, pageSize: 5 }),
-  })
-  const projectsQuery = useQuery({
-    queryKey: queryKeys.projects.list(1, 5),
-    queryFn: () => listProjects({ page: 1, pageSize: 5 }),
-  })
-  const auditQuery = useQuery({
-    queryKey: queryKeys.audit.list(1, 5),
-    queryFn: () => listAuditEvents({ page: 1, pageSize: 5 }),
-  })
+  const clientsQuery = useClientsQuery(1, 5)
+  const projectsQuery = useProjectsQuery(1, 5)
+  const auditQuery = useAuditEventsQuery(1, 5)
 
   const blockingError = !clientsQuery.data && !projectsQuery.data && !auditQuery.data
   const hasAnyLoading = clientsQuery.isLoading || projectsQuery.isLoading || auditQuery.isLoading

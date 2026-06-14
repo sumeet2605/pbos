@@ -1,10 +1,11 @@
 import { Card, Col, Row, Space, Typography, App as AntApp } from 'antd'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { EntityForm } from '@/components/forms/EntityForm'
 import { getApiErrorMessage } from '@/api/client'
-import { fetchCurrentUser, login } from '@/api/services'
+import { login } from '@/api/services'
+import type { LoginRequest } from '@/generated/client'
 import { queryKeys } from '@/api/queryKeys'
 import { useAuthStore } from '@/store/authStore'
 
@@ -14,15 +15,12 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required.'),
 })
 
-type LoginFormValues = z.infer<typeof loginSchema>
-
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const queryClient = useQueryClient()
   const { notification } = AntApp.useApp()
   const setTokens = useAuthStore((state) => state.setTokens)
-  const setUser = useAuthStore((state) => state.setUser)
   const clearSession = useAuthStore((state) => state.clearSession)
 
   const redirectTo = (location.state as { from?: string } | null)?.from ?? '/dashboard'
@@ -38,7 +36,7 @@ export function LoginPage() {
                 Access your organization workspace, manage clients and projects, and review audit activity.
               </Typography.Paragraph>
             </div>
-            <EntityForm<LoginFormValues>
+            <EntityForm<LoginRequest>
               schema={loginSchema}
               defaultValues={{
                 organization_slug: '',
@@ -67,8 +65,6 @@ export function LoginPage() {
                 try {
                   const tokens = await login(values)
                   setTokens(tokens, values.organization_slug)
-                  const currentUser = await fetchCurrentUser()
-                  setUser(currentUser)
                   await queryClient.invalidateQueries({ queryKey: queryKeys.auth.me })
                   navigate(redirectTo, { replace: true })
                 } catch (error) {

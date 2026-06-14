@@ -1,6 +1,6 @@
 import { Alert, Button, Table, TableProps } from 'antd'
+import type { PaginationMeta } from '@/generated/client'
 import { EmptyState } from '@/components/feedback/StateViews'
-import { PaginationMeta } from '@/types/common'
 
 interface DataTableProps<T extends object> extends TableProps<T> {
   error?: string | null

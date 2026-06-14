@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { Button, Card, Input, Select, Space, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { useQuery } from '@tanstack/react-query'
 import { getApiErrorMessage } from '@/api/client'
-import { listAuditEvents } from '@/api/services'
-import { queryKeys } from '@/api/queryKeys'
 import { DataTable } from '@/components/data/DataTable'
-import { AuditEvent } from '@/types/entities'
+import type { AuditEventResponse } from '@/generated/client'
+import { useAuditEventsQuery } from '@/hooks/useAuditHooks'
 import { formatDateTime, formatIdentifier, formatStatusLabel } from '@/utils/format'
 
 const PAGE_SIZE = 20
@@ -18,18 +16,12 @@ export function AuditEventViewerPage() {
   const [entityType, setEntityType] = useState<string | undefined>()
   const [action, setAction] = useState('')
 
-  const auditQuery = useQuery({
-    queryKey: queryKeys.audit.list(page, PAGE_SIZE, entityType, action),
-    queryFn: () =>
-      listAuditEvents({
-        page,
-        pageSize: PAGE_SIZE,
-        entityType,
-        action: action || undefined,
-      }),
+  const auditQuery = useAuditEventsQuery(page, PAGE_SIZE, {
+    entityType,
+    action: action || undefined,
   })
 
-  const columns: ColumnsType<AuditEvent> = [
+  const columns: ColumnsType<AuditEventResponse> = [
     {
       title: 'When',
       dataIndex: 'created_at',
@@ -117,7 +109,7 @@ export function AuditEventViewerPage() {
             Reset
           </Button>
         </Space>
-        <DataTable<AuditEvent>
+        <DataTable<AuditEventResponse>
           columns={columns}
           dataSource={auditQuery.data?.data ?? []}
           loading={auditQuery.isLoading}

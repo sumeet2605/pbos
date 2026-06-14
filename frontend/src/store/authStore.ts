@@ -1,14 +1,14 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-import { AuthTokens, User } from '@/types/entities'
+import type { TokenResponse, UserResponse } from '@/generated/client'
 
 interface AuthState {
   accessToken: string | null
   refreshToken: string | null
   organizationSlug: string
-  user: User | null
-  setTokens: (tokens: AuthTokens, organizationSlug: string) => void
-  setUser: (user: User | null) => void
+  user: UserResponse | null
+  setTokens: (tokens: TokenResponse, organizationSlug: string) => void
+  setUser: (user: UserResponse | null) => void
   clearSession: () => void
 }
 

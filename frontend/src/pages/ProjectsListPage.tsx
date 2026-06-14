@@ -2,12 +2,11 @@ import { useMemo, useState } from 'react'
 import { Button, Card, Space, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { Link, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
 import { getApiErrorMessage } from '@/api/client'
-import { listClients, listProjects } from '@/api/services'
-import { queryKeys } from '@/api/queryKeys'
 import { DataTable } from '@/components/data/DataTable'
-import { Project } from '@/types/entities'
+import type { ProjectResponse } from '@/generated/client'
+import { useClientsQuery } from '@/hooks/useClientHooks'
+import { useProjectsQuery } from '@/hooks/useProjectHooks'
 import { formatDateTime, formatStatusLabel } from '@/utils/format'
 
 const PAGE_SIZE = 10
@@ -15,23 +14,15 @@ const PAGE_SIZE = 10
 export function ProjectsListPage() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
-
-  const projectsQuery = useQuery({
-    queryKey: queryKeys.projects.list(page, PAGE_SIZE),
-    queryFn: () => listProjects({ page, pageSize: PAGE_SIZE }),
-  })
-  const clientsQuery = useQuery({
-    queryKey: queryKeys.clients.list(1, 100),
-    queryFn: () => listClients({ page: 1, pageSize: 100 }),
-  })
+  const projectsQuery = useProjectsQuery(page, PAGE_SIZE)
+  const clientsQuery = useClientsQuery(1, 100)
 
   const clientNameById = useMemo(
-    () =>
-      new Map((clientsQuery.data?.data ?? []).map((client) => [client.id, client.name] as const)),
+    () => new Map((clientsQuery.data?.data ?? []).map((client) => [client.id, client.name] as const)),
     [clientsQuery.data?.data]
   )
 
-  const columns: ColumnsType<Project> = [
+  const columns: ColumnsType<ProjectResponse> = [
     {
       title: 'Name',
       dataIndex: 'name',
@@ -49,7 +40,7 @@ export function ProjectsListPage() {
     {
       title: 'Status',
       dataIndex: 'status',
-      render: (status: string) => <Tag>{formatStatusLabel(status)}</Tag>,
+      render: (status: ProjectResponse['status']) => <Tag>{formatStatusLabel(status)}</Tag>,
     },
     {
       title: 'Created',
@@ -59,7 +50,7 @@ export function ProjectsListPage() {
     {
       title: 'Action',
       key: 'action',
-      render: (_, project) => <Link to={`/projects/${project.id}`}>View details</Link>,
+      render: (_, project) => <Link to={`/projects/${project.id}/edit`}>Edit</Link>,
     },
   ]
 
@@ -77,7 +68,7 @@ export function ProjectsListPage() {
             Create Project
           </Button>
         </div>
-        <DataTable<Project>
+        <DataTable<ProjectResponse>
           columns={columns}
           dataSource={projectsQuery.data?.data ?? []}
           loading={projectsQuery.isLoading}

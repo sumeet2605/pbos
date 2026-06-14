@@ -27,6 +27,10 @@ export function getPageTitle(pathname: string): string {
     return 'Create Client'
   }
 
+  if (pathname.endsWith('/edit') && pathname.startsWith('/clients/')) {
+    return 'Edit Client'
+  }
+
   if (pathname.startsWith('/clients/')) {
     return 'Client Detail'
   }
@@ -37,6 +41,10 @@ export function getPageTitle(pathname: string): string {
 
   if (pathname === '/projects/new') {
     return 'Create Project'
+  }
+
+  if (pathname.endsWith('/edit') && pathname.startsWith('/projects/')) {
+    return 'Edit Project'
   }
 
   if (pathname.startsWith('/projects/')) {
