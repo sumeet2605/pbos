@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:5173"]
 
     # Database
-    database_url: str = "******localhost:5432/cbos"
+    database_url: str = "postgresql+asyncpg://" "postgres:postgres@localhost:5432/cbos"
     database_pool_size: int = 10
     database_max_overflow: int = 20
     database_echo: bool = False
