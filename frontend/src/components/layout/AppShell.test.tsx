@@ -84,4 +84,20 @@ describe('AppShell logout', () => {
     })
     expect(screen.getByText('Login')).toBeInTheDocument()
   })
+
+  it('clears local session even when logout API fails', async () => {
+    logout.mockRejectedValue(new Error('network error'))
+    renderShell()
+
+    await userEvent.click(screen.getByRole('button', { name: /logout/i }))
+
+    await waitFor(() => {
+      expect(logout).toHaveBeenCalledWith('refresh-token')
+    })
+    await waitFor(() => {
+      expect(useAuthStore.getState().accessToken).toBeNull()
+      expect(useAuthStore.getState().refreshToken).toBeNull()
+    })
+    expect(screen.getByText('Login')).toBeInTheDocument()
+  })
 })
