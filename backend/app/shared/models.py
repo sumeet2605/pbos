@@ -44,7 +44,7 @@ class TenantScopedMixin:
     organization_id: Mapped[uuid.UUID] = mapped_column(
         Uuid,
         ForeignKey("organizations.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
         index=True,
     )
 

@@ -3,7 +3,7 @@ from collections.abc import Callable
 
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -61,11 +61,11 @@ def require_permission(resource: str, action: str) -> Callable[..., User]:
             .join(UserRole, UserRole.role_id == RolePermission.role_id)
             .where(
                 UserRole.user_id == current_user.id,
-                UserRole.organization_id == current_user.organization_id,
-                RolePermission.organization_id == current_user.organization_id,
+                or_(UserRole.organization_id == current_user.organization_id, UserRole.organization_id.is_(None)),
+                or_(RolePermission.organization_id == current_user.organization_id, RolePermission.organization_id.is_(None)),
                 Permission.resource == resource,
                 Permission.action == action,
-                Permission.organization_id == current_user.organization_id,
+                or_(Permission.organization_id == current_user.organization_id, Permission.organization_id.is_(None)),
             )
         )
         if result.scalar_one_or_none() is None:
