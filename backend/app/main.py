@@ -25,6 +25,7 @@ def _register_models() -> None:
         "app.configuration.models",
         "app.audit.models",
         "app.events.models",
+        "app.waitlist.models",
     ):
         import_module(module_name)
 
