@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { AuditEventViewerPage } from '@/pages/AuditEventViewerPage'
 import { ClientCreatePage } from '@/pages/ClientCreatePage'
@@ -6,6 +6,7 @@ import { ClientDetailPage } from '@/pages/ClientDetailPage'
 import { ClientEditPage } from '@/pages/ClientEditPage'
 import { ClientsListPage } from '@/pages/ClientsListPage'
 import { DashboardPage } from '@/pages/DashboardPage'
+import { LandingPage } from '@/pages/LandingPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { ProjectCreatePage } from '@/pages/ProjectCreatePage'
@@ -16,19 +17,25 @@ import { ProtectedRoute } from '@/routes/ProtectedRoute'
 import { PublicRoute } from '@/routes/PublicRoute'
 
 export const router = createBrowserRouter([
+  // Public landing page — no authentication required
+  {
+    path: '/',
+    element: <LandingPage />,
+  },
+  // Public auth routes — redirect to /dashboard when already authenticated
   {
     element: <PublicRoute />,
     children: [{ path: '/login', element: <LoginPage /> }],
   },
+  // Protected app routes
   {
-    path: '/',
     element: <ProtectedRoute />,
     children: [
       {
+        path: '/',
         element: <AppShell />,
         errorElement: <NotFoundPage />,
         children: [
-          { index: true, element: <Navigate to="/dashboard" replace /> },
           { path: 'dashboard', element: <DashboardPage /> },
           { path: 'clients', element: <ClientsListPage /> },
           { path: 'clients/new', element: <ClientCreatePage /> },
