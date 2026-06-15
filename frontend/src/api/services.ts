@@ -40,6 +40,34 @@ export interface AuditEventFilters {
   action?: string
 }
 
+export interface WaitlistCreatePayload {
+  name: string
+  email: string
+  phone: string
+  studio_name?: string
+  city?: string
+  photography_type?: string
+  monthly_bookings?: string
+  current_tools?: string
+  biggest_problem?: string
+}
+
+export interface WaitlistSignupResponse {
+  id: string
+  name: string
+  email: string
+  phone: string
+  studio_name: string | null
+  city: string | null
+  photography_type: string | null
+  monthly_bookings: string | null
+  current_tools: string | null
+  biggest_problem: string | null
+  status: string
+  created_at: string
+  updated_at: string
+}
+
 const requestOptions = {
   responseStyle: 'data' as const,
   throwOnError: true as const,
@@ -152,4 +180,27 @@ export async function listAuditEvents(
     data: response.data ?? [],
   }
   return normalized
+}
+
+export async function submitWaitlistSignup(
+  payload: WaitlistCreatePayload,
+): Promise<WaitlistSignupResponse> {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1'
+  const response = await fetch(`${API_BASE_URL}/waitlist`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  const body = (await response.json()) as {
+    success?: boolean
+    data?: WaitlistSignupResponse | null
+    errors?: Array<{ message: string }> | null
+  }
+
+  if (!response.ok || !body.success || body.data == null) {
+    throw new Error(body.errors?.[0]?.message ?? 'Failed to submit waitlist signup.')
+  }
+
+  return body.data
 }

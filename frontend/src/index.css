@@ -514,7 +514,8 @@ a {
   color: var(--ld-text-muted);
 }
 
-.landing-ea-field input {
+.landing-ea-field input,
+.landing-ea-field textarea {
   background: var(--ld-bg-card);
   border: 1px solid var(--ld-border);
   border-radius: 8px;
@@ -526,12 +527,21 @@ a {
   transition: border-color 0.2s;
 }
 
-.landing-ea-field input:focus {
+.landing-ea-field input:focus,
+.landing-ea-field textarea:focus {
   border-color: var(--ld-accent);
 }
 
-.landing-ea-field input::placeholder {
+.landing-ea-field input::placeholder,
+.landing-ea-field textarea::placeholder {
   color: rgba(160, 160, 160, 0.5);
+}
+
+.landing-ea-error {
+  color: #ff4d4f;
+  font-size: 14px;
+  margin-top: -4px;
+  margin-bottom: 8px;
 }
 
 .landing-ea-submit {
